@@ -1,0 +1,6 @@
+{
+  "name": "NutriFit Daily",
+  "description": "Offline daily health habit tracker for nutrition, water intake, weight monitoring, walking and jogging, healthy food suggestions, and progress analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

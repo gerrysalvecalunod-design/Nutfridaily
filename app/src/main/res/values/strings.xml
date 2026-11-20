@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">NutriFit Daily</string>
+    <string name="tagline">Track Your Health, Build Your Future</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_nutrition">Nutrition</string>
+    <string name="nav_water">Water</string>
+    <string name="nav_activity">Activity</string>
+    <string name="nav_progress">Progress</string>
+</resources>
