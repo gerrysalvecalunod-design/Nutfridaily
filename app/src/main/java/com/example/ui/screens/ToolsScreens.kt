@@ -207,9 +207,9 @@ fun TimersToolPanel(
                                 TextButton(onClick = {
                                     val logMins = (totalSec / 60).toInt().coerceAtLeast(1)
                                     viewModel.logCustomTimerWorkout("Stopwatch Drill Session", "Stopwatch", logMins)
-                                    savedMsg = "Logged ${logMins}m Stopwatch session to Progress!"
+                                    savedMsg = "Logged ${logMins}m Stopwatch session to History!"
                                 }) {
-                                    Text("Log Session to Progress", fontWeight = FontWeight.Bold)
+                                    Text("Log Session to History", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

@@ -26,7 +26,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.VolumeUp
@@ -57,12 +59,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.model.AppLanguage
 import com.example.data.model.DifficultyLevel
 import com.example.data.model.PlayerPosition
 import com.example.data.model.PreferredFoot
 import com.example.data.util.SoundAndReminderHelper
 import com.example.ui.components.StadiumCard
 import com.example.ui.theme.CrimsonOpponent
+import com.example.ui.theme.LocalAppStrings
 import com.example.viewmodel.FootballViewModel
 
 @Composable
@@ -70,6 +74,7 @@ fun ProfileAndSettingsScreen(
     viewModel: FootballViewModel,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     val profile by viewModel.playerProfile.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -118,12 +123,196 @@ fun ProfileAndSettingsScreen(
     ) {
         item {
             Column {
-                Text("Player Profile & Settings", style = MaterialTheme.typography.headlineLarge)
+                Text(strings.settingsScreenTitle, style = MaterialTheme.typography.headlineLarge)
                 Text(
-                    text = "All profile details and preferences stay 100% offline on this device",
+                    text = strings.settingsScreenSubtitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+
+        // Application Settings Card (Language, Goals, Theme, Sound, Reminders, Data)
+        item {
+            StadiumCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(strings.appSettingsCardTitle, style = MaterialTheme.typography.titleLarge)
+
+                    // Language Setting (English / Tagalog)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(strings.languageSettingTitle, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(strings.languageSettingSubtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            AppLanguage.entries.forEach { lang ->
+                                val selected = settings.appLanguage == lang.code
+                                val label = if (lang == AppLanguage.ENGLISH) strings.englishOption else strings.tagalogOption
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { viewModel.setAppLanguage(lang.code) }
+                                        .testTag("lang_option_${lang.code}")
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = label,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Training Goals Quick Access
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { viewModel.navigateTo(AppScreen.Goals) }
+                            .padding(vertical = 4.dp)
+                            .testTag("settings_open_goals"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Flag, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(strings.goalTargetsSettingTitle, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(
+                                text = "${settings.dailyMinutesGoal} min/day • ${settings.weeklySessionsGoal}x/week",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = strings.openGoalsButton,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                            )
+                        }
+                    }
+
+                    // Dark / Light Theme
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.DarkMode, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(strings.darkThemeTitle, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(strings.darkThemeSubtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = settings.isDarkTheme,
+                            onCheckedChange = { viewModel.setDarkTheme(it) },
+                            modifier = Modifier.testTag("switch_dark_theme")
+                        )
+                    }
+
+                    // Sound Settings
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.VolumeUp, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(strings.soundTitle, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(strings.soundSubtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = settings.soundEnabled,
+                            onCheckedChange = { viewModel.setSoundEnabled(it) },
+                            modifier = Modifier.testTag("switch_sound")
+                        )
+                    }
+
+                    // Reminder Settings
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.NotificationsActive, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(strings.remindersTitle, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("${strings.remindersSubtitlePrefix} ${settings.reminderTimeLabel}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = settings.reminderEnabled,
+                            onCheckedChange = { viewModel.setReminderEnabled(it) },
+                            modifier = Modifier.testTag("switch_reminders")
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                val sent = SoundAndReminderHelper.showTrainingReminderNotification(
+                                    context = context,
+                                    title = "Football Training",
+                                    message = "Time for your daily football training session!"
+                                )
+                                notifStatusMsg = if (sent) "Training reminder notification sent!" else "Enable notifications in system settings."
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(46.dp)
+                    ) {
+                        Text(strings.testReminderButton, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    if (notifStatusMsg != null) {
+                        Text(notifStatusMsg!!, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    // About & Clear Local Data
+                    OutlinedButton(
+                        onClick = { showAboutDialog = true },
+                        modifier = Modifier.fillMaxWidth().height(46.dp)
+                    ) {
+                        Icon(Icons.Default.Info, null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(strings.aboutAppButton, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = { showClearConfirmDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = CrimsonOpponent),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp).testTag("clear_all_data_button")
+                    ) {
+                        Icon(Icons.Default.DeleteForever, null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(strings.clearDataButton, color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
 
@@ -134,12 +323,12 @@ fun ProfileAndSettingsScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text("Player Bio & Attributes", style = MaterialTheme.typography.titleLarge)
+                    Text(strings.playerBioTitle, style = MaterialTheme.typography.titleLarge)
 
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Player Name") },
+                        label = { Text(strings.playerNameLabel) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().testTag("profile_name_input")
                     )
@@ -148,7 +337,7 @@ fun ProfileAndSettingsScreen(
                         OutlinedTextField(
                             value = age,
                             onValueChange = { age = it },
-                            label = { Text("Age") },
+                            label = { Text(strings.ageLabel) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.weight(1f)
@@ -156,7 +345,7 @@ fun ProfileAndSettingsScreen(
                         OutlinedTextField(
                             value = heightCm,
                             onValueChange = { heightCm = it },
-                            label = { Text("Height (cm)") },
+                            label = { Text(strings.heightLabel) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.weight(1f)
@@ -164,14 +353,14 @@ fun ProfileAndSettingsScreen(
                         OutlinedTextField(
                             value = weightKg,
                             onValueChange = { weightKg = it },
-                            label = { Text("Weight (kg)") },
+                            label = { Text(strings.weightLabel) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    Text("Playing Position", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(strings.playingPositionLabel, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         items(PlayerPosition.entries) { pos ->
                             val selected = pos == position
@@ -193,7 +382,7 @@ fun ProfileAndSettingsScreen(
                         }
                     }
 
-                    Text("Preferred Foot", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(strings.preferredFootLabel, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         PreferredFoot.entries.forEach { f ->
                             val selected = f == foot
@@ -214,7 +403,7 @@ fun ProfileAndSettingsScreen(
                         }
                     }
 
-                    Text("Experience Level", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(strings.experienceLevelLabel, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         DifficultyLevel.entries.forEach { lvl ->
                             val selected = lvl == level
@@ -238,14 +427,14 @@ fun ProfileAndSettingsScreen(
                     OutlinedTextField(
                         value = goals,
                         onValueChange = { goals = it },
-                        label = { Text("Personal Football Goals") },
+                        label = { Text(strings.personalGoalsFieldLabel) },
                         minLines = 2,
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     if (profileSavedToast) {
                         Text(
-                            text = "Profile saved locally!",
+                            text = strings.profileSavedMsg,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -271,116 +460,7 @@ fun ProfileAndSettingsScreen(
                     ) {
                         Icon(Icons.Default.Save, null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Save Player Profile", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-        // Application Settings Card
-        item {
-            StadiumCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text("Application Settings", style = MaterialTheme.typography.titleLarge)
-
-                    // Dark / Light Theme
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.DarkMode, null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Dark Stadium Theme", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Switch between Dark Pitch and Daylight Light mode", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(
-                            checked = settings.isDarkTheme,
-                            onCheckedChange = { viewModel.setDarkTheme(it) },
-                            modifier = Modifier.testTag("switch_dark_theme")
-                        )
-                    }
-
-                    // Sound Settings
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.VolumeUp, null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Timer Sound Cues", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Audio beeps for drills, intervals & countdowns", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(
-                            checked = settings.soundEnabled,
-                            onCheckedChange = { viewModel.setSoundEnabled(it) },
-                            modifier = Modifier.testTag("switch_sound")
-                        )
-                    }
-
-                    // Reminder Settings
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.NotificationsActive, null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Daily Training Reminders", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Target time: ${settings.reminderTimeLabel} (Offline local alert)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(
-                            checked = settings.reminderEnabled,
-                            onCheckedChange = { viewModel.setReminderEnabled(it) },
-                            modifier = Modifier.testTag("switch_reminders")
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
-                                val sent = SoundAndReminderHelper.showTrainingReminderNotification(
-                                    context = context,
-                                    title = "Football Training",
-                                    message = "Time for your daily football training session!"
-                                )
-                                notifStatusMsg = if (sent) "Training reminder notification sent!" else "Enable notifications in system settings."
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(46.dp)
-                    ) {
-                        Text("Test Offline Reminder Notification", fontWeight = FontWeight.SemiBold)
-                    }
-
-                    if (notifStatusMsg != null) {
-                        Text(notifStatusMsg!!, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                    }
-
-                    // About & Clear Local Data
-                    OutlinedButton(
-                        onClick = { showAboutDialog = true },
-                        modifier = Modifier.fillMaxWidth().height(46.dp)
-                    ) {
-                        Icon(Icons.Default.Info, null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("About Football Training", fontWeight = FontWeight.SemiBold)
-                    }
-
-                    Button(
-                        onClick = { showClearConfirmDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = CrimsonOpponent),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(48.dp).testTag("clear_all_data_button")
-                    ) {
-                        Icon(Icons.Default.DeleteForever, null, tint = Color.White)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Clear All Local Data", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(strings.saveProfileButton, fontWeight = FontWeight.Bold)
                     }
                 }
             }

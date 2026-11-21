@@ -21,6 +21,7 @@ import com.example.data.model.SavedTacticEntity
 import com.example.data.model.SkillCategory
 import com.example.data.model.TacticArrow
 import com.example.data.model.TacticMarker
+import com.example.data.model.TrainingGoalEntity
 import com.example.data.model.TrainingLesson
 import com.example.data.model.TrainingProgram
 import com.example.data.repository.FootballRepository
@@ -54,7 +55,18 @@ data class DashboardSummary(
     val totalMinutes: Int = 0,
     val streakDays: Int = 0,
     val activeProgramProgressPercent: Int = 0,
+    val activeProgramDoneDays: Int = 0,
+    val activeProgramTotalDays: Int = 7,
+    val activeProgramTitle: String = "",
     val todayCompletedCount: Int = 0,
+    val todayMinutes: Int = 0,
+    val dailyMinutesGoal: Int = 20,
+    val dailyGoalPercent: Int = 0,
+    val weeklySessionsCount: Int = 0,
+    val weeklySessionsGoal: Int = 5,
+    val weeklyGoalPercent: Int = 0,
+    val completedGoalsCount: Int = 0,
+    val totalGoalsCount: Int = 0,
     val weeklyPoints: List<DailyChartPoint> = emptyList(),
     val monthlyPoints: List<DailyChartPoint> = emptyList(),
     val skillRatings: List<SkillRating> = emptyList()
@@ -138,6 +150,9 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
     val plannedWorkouts: StateFlow<List<PlannedWorkoutEntity>> = repository.plannedWorkouts
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val trainingGoals: StateFlow<List<TrainingGoalEntity>> = repository.trainingGoals
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val skillLessons: List<TrainingLesson> = repository.allSkillLessons
     val fitnessLessons: List<TrainingLesson> = repository.allFitnessLessons
     val positionLessons: List<TrainingLesson> = repository.allPositionLessons
@@ -147,69 +162,113 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
     val dashboardSummary: StateFlow<DashboardSummary> = combine(
         completedLessons,
         programCompletions,
-        settings
-    ) { completed, progCompletions, currentSettings ->
-        val today = DateUtils.todayKey()
-        val totalMinutes = completed.sumOf { it.durationMinutes }
-        val todayCount = completed.count { it.dateKey == today }
-
-        // Compute training streak
-        val activeDates = completed.map { it.dateKey }.toSet()
-        var streak = 0
-        var dayOffset = if (activeDates.contains(today)) 0 else 1
-        while (activeDates.contains(DateUtils.daysAgoKey(dayOffset))) {
-            streak++
-            dayOffset++
-        }
-
-        // Active program completion %
-        val activeProgram = programs.find { it.id == currentSettings.activeProgramId } ?: programs.first()
-        val doneDays = progCompletions.count { it.programId == activeProgram.id && it.isCompleted }
-        val programPct = ((doneDays.toFloat() / activeProgram.totalDays.coerceAtLeast(1)) * 100).toInt().coerceIn(0, 100)
-
-        // Weekly 7-day chart points
-        val weekKeys = DateUtils.lastNDaysKeys(7)
-        val weeklyPts = weekKeys.map { k ->
-            val items = completed.filter { it.dateKey == k }
-            DailyChartPoint(
-                dateKey = k,
-                label = DateUtils.shortDayLabel(k),
-                minutes = items.sumOf { it.durationMinutes },
-                sessions = items.size
-            )
-        }
-
-        // Monthly 28-day activity points
-        val monthKeys = DateUtils.lastNDaysKeys(28)
-        val monthlyPts = monthKeys.mapIndexed { idx, k ->
-            val items = completed.filter { it.dateKey == k }
-            DailyChartPoint(
-                dateKey = k,
-                label = "${idx + 1}",
-                minutes = items.sumOf { it.durationMinutes },
-                sessions = items.size
-            )
-        }
-
-        // Skill improvement ratings per category
-        val ratings = SkillCategory.entries.map { cat ->
-            val catDone = completed.count { it.categoryKey == cat.name }
-            val uniqueDone = completed.filter { it.categoryKey == cat.name }.map { it.lessonId }.distinct().size
-            val pct = (25 + uniqueDone * 12 + (catDone - uniqueDone).coerceAtLeast(0) * 3).coerceIn(20, 100)
-            SkillRating(category = cat, scorePercent = pct, completedCount = catDone)
-        }
-
-        DashboardSummary(
-            completedSessionsTotal = completed.size,
-            totalMinutes = totalMinutes,
-            streakDays = streak,
-            activeProgramProgressPercent = programPct,
-            todayCompletedCount = todayCount,
-            weeklyPoints = weeklyPts,
-            monthlyPoints = monthlyPts,
-            skillRatings = ratings
+        settings,
+        trainingGoals
+    ) { completed, progCompletions, currentSettings, goals ->
+        computeSummary(
+            completed = completed,
+            progCompletions = progCompletions,
+            currentSettings = currentSettings,
+            goals = goals,
+            skillLessons = skillLessons,
+            programs = programs
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardSummary())
+
+    companion object {
+        fun computeSummary(
+            completed: List<CompletedLessonEntity>,
+            progCompletions: List<ProgramDayCompletionEntity>,
+            currentSettings: AppSettings,
+            goals: List<TrainingGoalEntity>,
+            skillLessons: List<TrainingLesson>,
+            programs: List<TrainingProgram>
+        ): DashboardSummary {
+            val today = DateUtils.todayKey()
+            val totalMinutes = completed.sumOf { it.durationMinutes }
+            val todayItems = completed.filter { it.dateKey == today }
+            val todayCount = todayItems.size
+            val todayMinutes = todayItems.sumOf { it.durationMinutes }
+
+            // Compute consecutive training streak
+            val activeDates = completed.map { it.dateKey }.toSet()
+            var streak = 0
+            var dayOffset = if (activeDates.contains(today)) 0 else 1
+            while (activeDates.contains(DateUtils.daysAgoKey(dayOffset))) {
+                streak++
+                dayOffset++
+            }
+
+            // Active program completion %
+            val activeProgram = programs.find { it.id == currentSettings.activeProgramId } ?: programs.first()
+            val doneDays = progCompletions.count { it.programId == activeProgram.id && it.isCompleted }
+            val programPct = ((doneDays.toFloat() / activeProgram.totalDays.coerceAtLeast(1)) * 100f)
+                .toInt().coerceIn(0, 100)
+
+            // Weekly 7-day chart points
+            val weekKeys = DateUtils.lastNDaysKeys(7)
+            val weekKeySet = weekKeys.toSet()
+            val weeklyPts = weekKeys.map { k ->
+                val items = completed.filter { it.dateKey == k }
+                DailyChartPoint(
+                    dateKey = k,
+                    label = DateUtils.shortDayLabel(k),
+                    minutes = items.sumOf { it.durationMinutes },
+                    sessions = items.size
+                )
+            }
+            val weeklySessionsCount = completed.count { it.dateKey in weekKeySet }
+
+            // Daily & Weekly Goal percentages
+            val dailyTarget = currentSettings.dailyMinutesGoal.coerceAtLeast(1)
+            val dailyGoalPct = ((todayMinutes.toFloat() / dailyTarget) * 100f).toInt().coerceIn(0, 100)
+            val weeklyTarget = currentSettings.weeklySessionsGoal.coerceAtLeast(1)
+            val weeklyGoalPct = ((weeklySessionsCount.toFloat() / weeklyTarget) * 100f).toInt().coerceIn(0, 100)
+
+            // Monthly 28-day activity points
+            val monthKeys = DateUtils.lastNDaysKeys(28)
+            val monthlyPts = monthKeys.mapIndexed { idx, k ->
+                val items = completed.filter { it.dateKey == k }
+                DailyChartPoint(
+                    dateKey = k,
+                    label = "${idx + 1}",
+                    minutes = items.sumOf { it.durationMinutes },
+                    sessions = items.size
+                )
+            }
+
+            // Honest Skill Mastery Progress per category (0% when 0 completed, 100% when all unique drills completed)
+            val ratings = SkillCategory.entries.map { cat ->
+                val totalInCat = skillLessons.count { it.categoryKey == cat.name }.coerceAtLeast(1)
+                val catLogs = completed.filter { it.categoryKey == cat.name }
+                val uniqueDone = catLogs.map { it.lessonId }.distinct().size
+                val pct = if (catLogs.isEmpty()) 0 else ((uniqueDone.toFloat() / totalInCat) * 100f).toInt().coerceIn(0, 100)
+                SkillRating(category = cat, scorePercent = pct, completedCount = catLogs.size)
+            }
+
+            return DashboardSummary(
+                completedSessionsTotal = completed.size,
+                totalMinutes = totalMinutes,
+                streakDays = streak,
+                activeProgramProgressPercent = programPct,
+                activeProgramDoneDays = doneDays,
+                activeProgramTotalDays = activeProgram.totalDays,
+                activeProgramTitle = activeProgram.title,
+                todayCompletedCount = todayCount,
+                todayMinutes = todayMinutes,
+                dailyMinutesGoal = dailyTarget,
+                dailyGoalPercent = dailyGoalPct,
+                weeklySessionsCount = weeklySessionsCount,
+                weeklySessionsGoal = weeklyTarget,
+                weeklyGoalPercent = weeklyGoalPct,
+                completedGoalsCount = goals.count { it.isCompleted },
+                totalGoalsCount = goals.size,
+                weeklyPoints = weeklyPts,
+                monthlyPoints = monthlyPts,
+                skillRatings = ratings
+            )
+        }
+    }
 
     // Timers state
     private val _timers = MutableStateFlow(TimersUiState())
@@ -354,6 +413,12 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun deleteCompletedLesson(id: Long) {
+        viewModelScope.launch {
+            repository.deleteCompletedLesson(id)
+        }
+    }
+
     // Programs
     fun selectActiveProgram(programId: String) {
         viewModelScope.launch {
@@ -363,16 +428,35 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleProgramDayCompleted(programId: String, dayNumber: Int, currentlyCompleted: Boolean) {
         viewModelScope.launch {
+            val nextCompleted = !currentlyCompleted
             repository.upsertProgramDayCompletion(
                 ProgramDayCompletionEntity(
                     programId = programId,
                     dayNumber = dayNumber,
-                    isCompleted = !currentlyCompleted,
-                    completedDateKey = if (!currentlyCompleted) DateUtils.todayKey() else ""
+                    isCompleted = nextCompleted,
+                    completedDateKey = if (nextCompleted) DateUtils.todayKey() else ""
                 )
             )
-            if (!currentlyCompleted && settings.value.soundEnabled) {
-                SoundAndReminderHelper.playCueBeep(isFinishOrWhistle = true)
+            val syncLessonId = "prog_${programId}_day_${dayNumber}"
+            if (nextCompleted) {
+                val program = programs.find { it.id == programId }
+                val dayPlan = program?.days?.find { it.dayNumber == dayNumber }
+                repository.deleteCompletedLessonByLessonId(syncLessonId)
+                repository.insertCompletedLesson(
+                    CompletedLessonEntity(
+                        lessonId = syncLessonId,
+                        dateKey = DateUtils.todayKey(),
+                        categoryKey = "PROGRAM",
+                        categoryLabel = program?.title ?: "Training Program",
+                        title = "Day $dayNumber: ${dayPlan?.title ?: "Program Workout"}",
+                        durationMinutes = (dayPlan?.durationMinutes ?: 20).coerceAtLeast(5)
+                    )
+                )
+                if (settings.value.soundEnabled) {
+                    SoundAndReminderHelper.playCueBeep(isFinishOrWhistle = true)
+                }
+            } else {
+                repository.deleteCompletedLessonByLessonId(syncLessonId)
             }
         }
     }
@@ -381,6 +465,55 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             repository.resetProgram(programId)
         }
+    }
+
+    // Training Goals
+    fun addGoal(title: String, category: String, targetValue: Int, unit: String) {
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            repository.insertGoal(
+                TrainingGoalEntity(
+                    title = title.trim(),
+                    category = category.trim().ifBlank { "Skill" },
+                    targetValue = targetValue.coerceIn(1, 9999),
+                    currentValue = 0,
+                    unit = unit.trim().ifBlank { "sessions" },
+                    isCompleted = false,
+                    createdDateKey = DateUtils.todayKey()
+                )
+            )
+        }
+    }
+
+    fun incrementGoalProgress(goal: TrainingGoalEntity, delta: Int = 1) {
+        viewModelScope.launch {
+            val nextVal = (goal.currentValue + delta).coerceIn(0, goal.targetValue)
+            val done = nextVal >= goal.targetValue
+            repository.updateGoal(goal.copy(currentValue = nextVal, isCompleted = done))
+            if (done && !goal.isCompleted && settings.value.soundEnabled) {
+                SoundAndReminderHelper.playCueBeep(isFinishOrWhistle = true)
+            }
+        }
+    }
+
+    fun toggleGoalCompleted(goal: TrainingGoalEntity) {
+        viewModelScope.launch {
+            val nextDone = !goal.isCompleted
+            val nextVal = if (nextDone) goal.targetValue else goal.currentValue.coerceAtMost((goal.targetValue - 1).coerceAtLeast(0))
+            repository.updateGoal(goal.copy(isCompleted = nextDone, currentValue = nextVal))
+        }
+    }
+
+    fun deleteGoal(goal: TrainingGoalEntity) {
+        viewModelScope.launch { repository.deleteGoal(goal) }
+    }
+
+    fun setDailyMinutesGoal(minutes: Int) {
+        viewModelScope.launch { repository.setDailyMinutesGoal(minutes) }
+    }
+
+    fun setWeeklySessionsGoal(sessions: Int) {
+        viewModelScope.launch { repository.setWeeklySessionsGoal(sessions) }
     }
 
     // Personal Records
@@ -430,7 +563,24 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
 
     fun togglePlannedWorkout(workout: PlannedWorkoutEntity) {
         viewModelScope.launch {
-            repository.updatePlannedWorkout(workout.copy(isCompleted = !workout.isCompleted))
+            val nextCompleted = !workout.isCompleted
+            repository.updatePlannedWorkout(workout.copy(isCompleted = nextCompleted))
+            val syncLessonId = "plan_${workout.id}"
+            if (nextCompleted) {
+                repository.deleteCompletedLessonByLessonId(syncLessonId)
+                repository.insertCompletedLesson(
+                    CompletedLessonEntity(
+                        lessonId = syncLessonId,
+                        dateKey = DateUtils.todayKey(),
+                        categoryKey = "PLANNER",
+                        categoryLabel = workout.categoryLabel,
+                        title = workout.title,
+                        durationMinutes = workout.durationMinutes
+                    )
+                )
+            } else {
+                repository.deleteCompletedLessonByLessonId(syncLessonId)
+            }
         }
     }
 
@@ -700,6 +850,10 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
 
     fun setReminderTime(timeLabel: String) {
         viewModelScope.launch { repository.setReminderTime(timeLabel) }
+    }
+
+    fun setAppLanguage(languageCode: String) {
+        viewModelScope.launch { repository.setAppLanguage(languageCode) }
     }
 
     fun clearAllLocalData() {

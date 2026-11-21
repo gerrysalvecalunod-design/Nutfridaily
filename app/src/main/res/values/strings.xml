@@ -4,6 +4,6 @@
     <string name="nav_home">Home</string>
     <string name="nav_training">Training</string>
     <string name="nav_programs">Programs</string>
-    <string name="nav_progress">Progress</string>
-    <string name="nav_profile">Profile</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
 </resources>

@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.data.model.AppSettings
@@ -22,6 +23,9 @@ class SettingsDataStore(private val context: Context) {
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_TIME = stringPreferencesKey("reminder_time")
         val ACTIVE_PROGRAM_ID = stringPreferencesKey("active_program_id")
+        val APP_LANGUAGE = stringPreferencesKey("app_language")
+        val DAILY_MINUTES_GOAL = intPreferencesKey("daily_minutes_goal")
+        val WEEKLY_SESSIONS_GOAL = intPreferencesKey("weekly_sessions_goal")
     }
 
     val settingsFlow: Flow<AppSettings> = context.footballSettingsStore.data.map { prefs ->
@@ -30,7 +34,10 @@ class SettingsDataStore(private val context: Context) {
             soundEnabled = prefs[Keys.SOUND_ENABLED] ?: true,
             reminderEnabled = prefs[Keys.REMINDER_ENABLED] ?: true,
             reminderTimeLabel = prefs[Keys.REMINDER_TIME] ?: "05:30 PM",
-            activeProgramId = prefs[Keys.ACTIVE_PROGRAM_ID] ?: "program_7"
+            activeProgramId = prefs[Keys.ACTIVE_PROGRAM_ID] ?: "program_7",
+            appLanguage = prefs[Keys.APP_LANGUAGE] ?: "en",
+            dailyMinutesGoal = prefs[Keys.DAILY_MINUTES_GOAL] ?: 20,
+            weeklySessionsGoal = prefs[Keys.WEEKLY_SESSIONS_GOAL] ?: 5
         )
     }
 
@@ -52,6 +59,18 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setActiveProgramId(programId: String) {
         context.footballSettingsStore.edit { it[Keys.ACTIVE_PROGRAM_ID] = programId }
+    }
+
+    suspend fun setAppLanguage(languageCode: String) {
+        context.footballSettingsStore.edit { it[Keys.APP_LANGUAGE] = languageCode }
+    }
+
+    suspend fun setDailyMinutesGoal(minutes: Int) {
+        context.footballSettingsStore.edit { it[Keys.DAILY_MINUTES_GOAL] = minutes.coerceIn(5, 240) }
+    }
+
+    suspend fun setWeeklySessionsGoal(sessions: Int) {
+        context.footballSettingsStore.edit { it[Keys.WEEKLY_SESSIONS_GOAL] = sessions.coerceIn(1, 21) }
     }
 
     suspend fun resetAllSettings() {

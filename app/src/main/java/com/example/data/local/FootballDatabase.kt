@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.CompletedLessonEntity
 import com.example.data.model.DifficultyLevel
 import com.example.data.model.PersonalRecordEntity
@@ -16,6 +18,7 @@ import com.example.data.model.SavedTacticEntity
 import com.example.data.model.SkillCategory
 import com.example.data.model.TacticArrow
 import com.example.data.model.TacticMarker
+import com.example.data.model.TrainingGoalEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -29,9 +32,10 @@ import java.util.Locale
         ProgramDayCompletionEntity::class,
         PersonalRecordEntity::class,
         SavedTacticEntity::class,
-        PlannedWorkoutEntity::class
+        PlannedWorkoutEntity::class,
+        TrainingGoalEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class FootballDatabase : RoomDatabase() {
@@ -41,10 +45,30 @@ abstract class FootballDatabase : RoomDatabase() {
     abstract fun personalRecordDao(): PersonalRecordDao
     abstract fun savedTacticDao(): SavedTacticDao
     abstract fun plannedWorkoutDao(): PlannedWorkoutDao
+    abstract fun trainingGoalDao(): TrainingGoalDao
 
     companion object {
         @Volatile
         private var INSTANCE: FootballDatabase? = null
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `training_goals` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `category` TEXT NOT NULL,
+                        `targetValue` INTEGER NOT NULL,
+                        `currentValue` INTEGER NOT NULL,
+                        `unit` TEXT NOT NULL,
+                        `isCompleted` INTEGER NOT NULL,
+                        `createdDateKey` TEXT NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
 
         fun getDatabase(context: Context): FootballDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -52,7 +76,10 @@ abstract class FootballDatabase : RoomDatabase() {
                     context.applicationContext,
                     FootballDatabase::class.java,
                     "footballpro_academy_db"
-                ).fallbackToDestructiveMigration().build()
+                )
+                    .addMigrations(MIGRATION_1_2)
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
@@ -288,6 +315,14 @@ object DatabaseInitializer {
                 PlannedWorkoutEntity(dayOfWeek = "Sat", dateKey = today, title = "Match Stamina HIIT", categoryLabel = "Stamina", durationMinutes = 35, isCompleted = false),
                 PlannedWorkoutEntity(dayOfWeek = "Sun", dateKey = today, title = "Mobility Cooldown & Stretch", categoryLabel = "Cooldown", durationMinutes = 15, isCompleted = false)
             ).forEach { plannerDao.insert(it) }
+
+            // Seed Starter Training Goals
+            val goalDao = database.trainingGoalDao()
+            listOf(
+                TrainingGoalEntity(title = "Complete 5 Ball Control Drills", category = "Skill", targetValue = 5, currentValue = 1, unit = "drills", isCompleted = false, createdDateKey = today),
+                TrainingGoalEntity(title = "7-Day Speed & Stamina Streak", category = "Fitness", targetValue = 7, currentValue = 3, unit = "days", isCompleted = false, createdDateKey = today),
+                TrainingGoalEntity(title = "100 Weak-Foot Finishing Shots", category = "Match Prep", targetValue = 100, currentValue = 40, unit = "shots", isCompleted = false, createdDateKey = today)
+            ).forEach { goalDao.insert(it) }
         }
     }
 }

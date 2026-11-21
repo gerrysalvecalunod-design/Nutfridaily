@@ -9,6 +9,7 @@ import com.example.data.model.PlannedWorkoutEntity
 import com.example.data.model.PlayerProfileEntity
 import com.example.data.model.ProgramDayCompletionEntity
 import com.example.data.model.SavedTacticEntity
+import com.example.data.model.TrainingGoalEntity
 import com.example.data.model.TrainingLesson
 import com.example.data.model.TrainingProgram
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ class FootballRepository(
     private val recordDao = database.personalRecordDao()
     private val tacticDao = database.savedTacticDao()
     private val plannerDao = database.plannedWorkoutDao()
+    private val goalDao = database.trainingGoalDao()
 
     val playerProfile: Flow<PlayerProfileEntity?> = profileDao.observeProfile()
     val completedLessons: Flow<List<CompletedLessonEntity>> = completedDao.observeAllCompleted()
@@ -32,6 +34,7 @@ class FootballRepository(
     val personalRecords: Flow<List<PersonalRecordEntity>> = recordDao.observeAll()
     val savedTactics: Flow<List<SavedTacticEntity>> = tacticDao.observeAll()
     val plannedWorkouts: Flow<List<PlannedWorkoutEntity>> = plannerDao.observeAll()
+    val trainingGoals: Flow<List<TrainingGoalEntity>> = goalDao.observeAll()
     val settingsFlow: Flow<AppSettings> = settingsStore.settingsFlow
 
     val allSkillLessons: List<TrainingLesson> = SkillAndFitnessCurriculum.skillLessons
@@ -47,6 +50,8 @@ class FootballRepository(
     suspend fun insertCompletedLesson(item: CompletedLessonEntity) = completedDao.insertCompleted(item)
 
     suspend fun deleteCompletedLesson(id: Long) = completedDao.deleteById(id)
+
+    suspend fun deleteCompletedLessonByLessonId(lessonId: String) = completedDao.deleteByLessonId(lessonId)
 
     suspend fun upsertProgramDayCompletion(entry: ProgramDayCompletionEntity) = programDao.upsertDayCompletion(entry)
 
@@ -68,11 +73,18 @@ class FootballRepository(
 
     suspend fun deletePlannedWorkout(workout: PlannedWorkoutEntity) = plannerDao.delete(workout)
 
+    suspend fun insertGoal(goal: TrainingGoalEntity) = goalDao.insert(goal)
+    suspend fun updateGoal(goal: TrainingGoalEntity) = goalDao.update(goal)
+    suspend fun deleteGoal(goal: TrainingGoalEntity) = goalDao.delete(goal)
+
     suspend fun setDarkTheme(enabled: Boolean) = settingsStore.setDarkTheme(enabled)
     suspend fun setSoundEnabled(enabled: Boolean) = settingsStore.setSoundEnabled(enabled)
     suspend fun setReminderEnabled(enabled: Boolean) = settingsStore.setReminderEnabled(enabled)
     suspend fun setReminderTime(timeLabel: String) = settingsStore.setReminderTime(timeLabel)
     suspend fun setActiveProgramId(programId: String) = settingsStore.setActiveProgramId(programId)
+    suspend fun setAppLanguage(languageCode: String) = settingsStore.setAppLanguage(languageCode)
+    suspend fun setDailyMinutesGoal(minutes: Int) = settingsStore.setDailyMinutesGoal(minutes)
+    suspend fun setWeeklySessionsGoal(sessions: Int) = settingsStore.setWeeklySessionsGoal(sessions)
 
     suspend fun clearAllLocalData() {
         withContext(Dispatchers.IO) {

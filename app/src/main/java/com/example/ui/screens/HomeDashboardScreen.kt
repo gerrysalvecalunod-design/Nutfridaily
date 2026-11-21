@@ -27,17 +27,20 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SportsHandball
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,6 +71,7 @@ import com.example.ui.theme.AmberGlow
 import com.example.ui.theme.AmberTimer
 import com.example.ui.theme.CrimsonOpponent
 import com.example.ui.theme.FlameOrange
+import com.example.ui.theme.LocalAppStrings
 import com.example.ui.theme.SpotlightGold
 import com.example.viewmodel.FootballViewModel
 import com.example.viewmodel.TrainingSubTab
@@ -77,6 +81,7 @@ fun HomeDashboardScreen(
     viewModel: FootballViewModel,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     val profile by viewModel.playerProfile.collectAsStateWithLifecycle()
     val summary by viewModel.dashboardSummary.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -155,36 +160,55 @@ fun HomeDashboardScreen(
                                 color = if (isDark) SpotlightGold else MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Welcome, ${profile?.playerName?.split(" ")?.firstOrNull() ?: "Player"}!",
+                                text = "${strings.welcomePrefix}, ${profile?.playerName?.split(" ")?.firstOrNull() ?: "Player"}!",
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = if (isDark) Color.White else MaterialTheme.colorScheme.onBackground
                             )
                         }
 
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = if (isDark) Color(0xFF1B100A).copy(alpha = 0.78f) else dashCardBg,
-                            modifier = Modifier
-                                .clickable { viewModel.navigateTo(AppScreen.Profile) }
-                                .testTag("home_profile_chip")
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isDark) Color(0xFF1B100A).copy(alpha = 0.78f) else dashCardBg,
+                                modifier = Modifier
+                                    .clickable { viewModel.navigateTo(AppScreen.Goals) }
+                                    .testTag("home_goals_chip")
                             ) {
-                                Icon(
-                                    Icons.Default.Person,
-                                    "Profile",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                Text(
-                                    text = position.shortCode,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Flag,
+                                        strings.goalsAction,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = strings.goalsAction,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isDark) Color(0xFF1B100A).copy(alpha = 0.78f) else dashCardBg,
+                                modifier = Modifier
+                                    .clickable { viewModel.navigateTo(AppScreen.Profile) }
+                                    .testTag("home_settings_chip")
+                            ) {
+                                Box(modifier = Modifier.padding(8.dp), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.Settings,
+                                        strings.settingsAction,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -196,7 +220,7 @@ fun HomeDashboardScreen(
                     StadiumCard(
                         containerColor = dashCardBg,
                         borderColor = dashCardBorder,
-                        onClick = { viewModel.navigateTo(AppScreen.Progress) }
+                        onClick = { viewModel.navigateTo(AppScreen.History) }
                     ) {
                         Row(
                             modifier = Modifier
@@ -225,21 +249,87 @@ fun HomeDashboardScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 HeroStatItem(
-                                    label = "Workouts",
+                                    label = strings.workoutsLabel,
                                     value = "${summary.completedSessionsTotal}",
                                     accent = MaterialTheme.colorScheme.primary
                                 )
                                 HeroStatItem(
-                                    label = "Streak",
+                                    label = strings.streakLabel,
                                     value = "${summary.streakDays}d",
                                     accent = CrimsonOpponent,
                                     icon = Icons.Default.LocalFireDepartment
                                 )
                                 HeroStatItem(
-                                    label = "Minutes",
+                                    label = strings.minutesLabel,
                                     value = "${summary.totalMinutes}m",
                                     accent = AmberGlow
                                 )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 1.5 Training Goals Live Progress Card
+            item {
+                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    StadiumCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = dashCardBg,
+                        borderColor = dashCardBorder,
+                        onClick = { viewModel.navigateTo(AppScreen.Goals) }
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Flag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(strings.dailyGoalsHeader, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                }
+                                Text(
+                                    text = strings.manageGoals,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "${strings.dailyTargetLabel}: ${summary.todayMinutes}/${summary.dailyMinutesGoal}m",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    LinearProgressIndicator(
+                                        progress = { summary.dailyGoalPercent / 100f },
+                                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "${strings.weeklyTargetLabel}: ${summary.weeklySessionsCount}/${summary.weeklySessionsGoal}",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    LinearProgressIndicator(
+                                        progress = { summary.weeklyGoalPercent / 100f },
+                                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                                        color = AmberGlow,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
@@ -255,7 +345,7 @@ fun HomeDashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Today's Training Plan",
+                        text = strings.todaysPlanTitle,
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
@@ -344,7 +434,7 @@ fun HomeDashboardScreen(
                             ) {
                                 Icon(Icons.Default.PlayArrow, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Open Plan", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                                Text(strings.openPlan, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                             }
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -359,9 +449,9 @@ fun HomeDashboardScreen(
                                     modifier = Modifier.padding(horizontal = 14.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.Timer, "Timer", tint = AmberTimer, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Timer, strings.timers, tint = AmberTimer, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(5.dp))
-                                    Text("Timers", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text(strings.timers, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
                             }
                         }
@@ -381,11 +471,11 @@ fun HomeDashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Training Categories",
+                        text = strings.trainingCategories,
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
-                        text = "View all",
+                        text = strings.viewAll,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -410,7 +500,7 @@ fun HomeDashboardScreen(
                         }
                         QuickCategoryTile(
                             title = cat.displayName,
-                            subtitle = "5 drills",
+                            subtitle = "5 ${strings.drillsCountSuffix}",
                             icon = icon,
                             accent = MaterialTheme.colorScheme.primary,
                             containerColor = dashCardBg,
@@ -429,7 +519,7 @@ fun HomeDashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Pro Tools & Coaching",
+                    text = strings.proToolsCoaching,
                     style = MaterialTheme.typography.titleLarge
                 )
 
@@ -494,7 +584,7 @@ fun HomeDashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     containerColor = dashCardBg,
                     borderColor = dashCardBorder,
-                    onClick = { viewModel.navigateTo(AppScreen.Progress) }
+                    onClick = { viewModel.navigateTo(AppScreen.History) }
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -504,18 +594,18 @@ fun HomeDashboardScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "Weekly Activity Summary",
+                                    text = strings.weeklyActivitySummary,
                                     style = MaterialTheme.typography.titleLarge
                                 )
                                 Text(
-                                    text = "${summary.todayCompletedCount} sessions completed today",
+                                    text = "${summary.todayCompletedCount} ${strings.sessionsCompletedToday}",
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Icon(
                                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = "Open Progress",
+                                contentDescription = strings.navHistory,
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }

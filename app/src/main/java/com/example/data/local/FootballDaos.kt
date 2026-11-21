@@ -12,6 +12,7 @@ import com.example.data.model.PlannedWorkoutEntity
 import com.example.data.model.PlayerProfileEntity
 import com.example.data.model.ProgramDayCompletionEntity
 import com.example.data.model.SavedTacticEntity
+import com.example.data.model.TrainingGoalEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -36,6 +37,9 @@ interface CompletedLessonDao {
 
     @Query("DELETE FROM completed_lessons WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM completed_lessons WHERE lessonId = :lessonId")
+    suspend fun deleteByLessonId(lessonId: String)
 }
 
 @Dao
@@ -90,4 +94,19 @@ interface PlannedWorkoutDao {
 
     @Delete
     suspend fun delete(workout: PlannedWorkoutEntity)
+}
+
+@Dao
+interface TrainingGoalDao {
+    @Query("SELECT * FROM training_goals ORDER BY isCompleted ASC, id DESC")
+    fun observeAll(): Flow<List<TrainingGoalEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(goal: TrainingGoalEntity)
+
+    @Update
+    suspend fun update(goal: TrainingGoalEntity)
+
+    @Delete
+    suspend fun delete(goal: TrainingGoalEntity)
 }

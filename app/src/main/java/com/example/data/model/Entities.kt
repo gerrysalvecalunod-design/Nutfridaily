@@ -113,12 +113,20 @@ data class TacticArrow(
     val endY: Float
 )
 
+enum class AppLanguage(val code: String, val displayName: String) {
+    ENGLISH("en", "English"),
+    TAGALOG("tl", "Tagalog")
+}
+
 data class AppSettings(
     val isDarkTheme: Boolean = true,
     val soundEnabled: Boolean = true,
     val reminderEnabled: Boolean = true,
     val reminderTimeLabel: String = "05:30 PM",
-    val activeProgramId: String = "program_7"
+    val activeProgramId: String = "program_7",
+    val appLanguage: String = AppLanguage.ENGLISH.code,
+    val dailyMinutesGoal: Int = 20,
+    val weeklySessionsGoal: Int = 5
 )
 
 @Entity(tableName = "player_profile")
@@ -134,6 +142,18 @@ data class PlayerProfileEntity(
     val personalGoals: String = "Improve weak-foot finishing, first touch under pressure, and 90-minute match stamina.",
     val onboardingCompleted: Boolean = false,
     val updatedAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "training_goals")
+data class TrainingGoalEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val category: String = "Skill",
+    val targetValue: Int = 5,
+    val currentValue: Int = 0,
+    val unit: String = "sessions",
+    val isCompleted: Boolean = false,
+    val createdDateKey: String = ""
 )
 
 @Entity(tableName = "completed_lessons")

@@ -548,7 +548,7 @@ private fun LessonDetailView(
                     Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.onPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (justLogged) "Session Logged to Progress!" else if (isCompletedOnce) "Log Session Again" else "Mark as Completed",
+                        text = if (justLogged) "Session Logged to History!" else if (isCompletedOnce) "Log Session Again" else "Mark as Completed",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary
                     )

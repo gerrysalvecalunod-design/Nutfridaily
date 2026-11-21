@@ -6,6 +6,7 @@ sealed class AppScreen(val route: String) {
     data object Home : AppScreen("home")
     data object Training : AppScreen("training")
     data object Programs : AppScreen("programs")
-    data object Progress : AppScreen("progress")
+    data object History : AppScreen("history")
+    data object Goals : AppScreen("goals")
     data object Profile : AppScreen("profile")
 }
