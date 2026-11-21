@@ -1,12 +1,19 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,26 +21,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.DirectionsRun
-import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -60,36 +63,54 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
-import com.example.ui.components.BotanicalCard
-import com.example.ui.theme.CitrusGold
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ForestDeep
-import com.example.ui.theme.MintContainerLight
-import com.example.viewmodel.NutriFitViewModel
+import com.example.data.model.DifficultyLevel
+import com.example.data.model.PlayerPosition
+import com.example.data.model.PreferredFoot
+import com.example.ui.components.StadiumCard
+import com.example.viewmodel.FootballViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun SplashScreen(
     onFinished: () -> Unit
 ) {
-    val scale = remember { Animatable(0.75f) }
-    val alpha = remember { Animatable(0f) }
+    val alphaAnim = remember { Animatable(0f) }
+    val scaleAnim = remember { Animatable(0.84f) }
+    val loadingProgress = remember { Animatable(0f) }
+
+    val pulseTransition = rememberInfiniteTransition(label = "splash_pulse")
+    val pulseScale by pulseTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1100, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
 
     LaunchedEffect(Unit) {
-        alpha.animateTo(1f, animationSpec = tween(750))
-        scale.animateTo(1f, animationSpec = tween(750))
-        delay(1200)
+        launch { alphaAnim.animateTo(1f, tween(600)) }
+        launch { scaleAnim.animateTo(1f, tween(650, easing = FastOutSlowInEasing)) }
+        loadingProgress.animateTo(1f, tween(1850, easing = FastOutSlowInEasing))
+        delay(150L)
         onFinished()
     }
+
+    val logoCreamBg = Color(0xFFFCF2E6)
+    val logoCreamMid = Color(0xFFF6E9DA)
+    val inkSlate = Color(0xFF152936)
+    val steelTeal = Color(0xFF2E667A)
+    val coralStreak = Color(0xFFE46B43)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(EmeraldPrimary, ForestDeep)
+                Brush.verticalGradient(
+                    listOf(logoCreamBg, logoCreamMid, logoCreamBg)
                 )
             ),
         contentAlignment = Alignment.Center
@@ -97,290 +118,306 @@ fun SplashScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
+                .alpha(alphaAnim.value)
+                .scale(scaleAnim.value)
                 .padding(32.dp)
-                .scale(scale.value)
-                .alpha(alpha.value)
         ) {
-            Box(
+            Image(
+                painter = painterResource(id = R.drawable.ic_football_logo),
+                contentDescription = "Football Training Logo",
                 modifier = Modifier
-                    .size(110.dp)
-                    .clip(RoundedCornerShape(30.dp))
-                    .background(Color.White.copy(alpha = 0.16f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Eco,
-                        contentDescription = "NutriFit Daily Leaf Logo",
-                        tint = Color.White,
-                        modifier = Modifier.size(42.dp)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.DirectionsRun,
-                        contentDescription = null,
-                        tint = CitrusGold,
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-            }
+                    .size(210.dp)
+                    .scale(pulseScale)
+                    .clip(RoundedCornerShape(28.dp)),
+                contentScale = ContentScale.Fit
+            )
 
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Text(
-                text = "NutriFit Daily",
+                text = "FOOTBALL",
                 style = MaterialTheme.typography.displayLarge,
-                color = Color.White,
-                textAlign = TextAlign.Center
+                color = inkSlate,
+                letterSpacing = 2.sp
+            )
+            Text(
+                text = "TRAINING",
+                style = MaterialTheme.typography.headlineMedium,
+                color = coralStreak,
+                letterSpacing = 5.sp
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Track Your Health, Build Your Future",
-                fontSize = 15.sp,
+                text = "Train Smart. Play Fearless. 100% Offline.",
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = MintContainerLight,
+                color = steelTeal,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(34.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            CircularProgressIndicator(
-                modifier = Modifier.size(30.dp),
-                color = Color.White,
-                trackColor = Color.White.copy(alpha = 0.25f),
-                strokeWidth = 3.dp
+            LinearProgressIndicator(
+                progress = { loadingProgress.value },
+                modifier = Modifier
+                    .width(190.dp)
+                    .height(6.dp)
+                    .clip(CircleShape),
+                color = coralStreak,
+                trackColor = Color(0xFFE5D6C5)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "100% Offline • Local Habit Storage",
+                text = "Preparing pitch & drills...",
                 fontSize = 11.sp,
-                color = Color.White.copy(alpha = 0.75f)
+                fontWeight = FontWeight.SemiBold,
+                color = steelTeal.copy(alpha = 0.85f)
             )
         }
     }
 }
 
 @Composable
-fun WelcomeLoginScreen(
-    viewModel: NutriFitViewModel,
-    modifier: Modifier = Modifier
+fun WelcomeScreen(
+    viewModel: FootballViewModel
 ) {
-    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
-    val overview by viewModel.todayOverview.collectAsStateWithLifecycle()
+    var name by remember { mutableStateOf("Jordan Silva") }
+    var ageInput by remember { mutableStateOf("19") }
+    var selectedPosition by remember { mutableStateOf(PlayerPosition.CENTRAL_MID) }
+    var selectedFoot by remember { mutableStateOf(PreferredFoot.RIGHT) }
+    var selectedLevel by remember { mutableStateOf(DifficultyLevel.INTERMEDIATE) }
 
-    var name by remember(profile) { mutableStateOf(profile?.name ?: "Alex Morgan") }
-    var currentWeightStr by remember(overview) { mutableStateOf(String.format("%.1f", overview.latestWeightKg)) }
-    var targetWeightStr by remember(profile) { mutableStateOf(String.format("%.1f", profile?.targetWeightKg ?: 66.0f)) }
-    var calorieGoalStr by remember(profile) { mutableStateOf((profile?.dailyCalorieGoal ?: 2000).toString()) }
-    var waterGoalStr by remember(profile) { mutableStateOf((profile?.dailyWaterGoalMl ?: 2250).toString()) }
-    var activityGoalStr by remember(profile) { mutableStateOf((profile?.dailyActivityMinutesGoal ?: 30).toString()) }
-
-    Column(
-        modifier = modifier
+    LazyColumn(
+        modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(bottom = 32.dp)
     ) {
-        // Hero Banner Illustration
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(190.dp)
-                .clip(RoundedCornerShape(24.dp))
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.img_nutrifit_hero),
-                contentDescription = "NutriFit Daily Healthy Lifestyle",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+        item {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, ForestDeep.copy(alpha = 0.88f))
-                        )
-                    )
-            )
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(18.dp)
+                    .fillMaxWidth()
+                    .height(220.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = EmeraldPrimary
+                Image(
+                    painter = painterResource(id = R.drawable.img_stadium_hero),
+                    contentDescription = "Night Stadium Turf Pitch",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.Black.copy(alpha = 0.25f),
+                                    MaterialTheme.colorScheme.background
+                                )
+                            )
+                        )
+                )
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 20.dp, vertical = 14.dp)
                 ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Bolt, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("OFFLINE TRAINING", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "OFFLINE HEALTH COMPANION",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        text = "Welcome to Football Training",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "Zero internet needed. All drills, timers & tactics saved locally on your device.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Welcome to NutriFit Daily",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White
-                )
-                Text(
-                    text = "Meals, hydration, weight & active steps — all stored privately on your device.",
-                    fontSize = 12.sp,
-                    color = MintContainerLight
-                )
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                StadiumCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Player Profile Setup",
+                            style = MaterialTheme.typography.titleLarge
+                        )
 
-        BotanicalCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Text(
-                    text = "Set Up Your Local Profile",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Customize your daily habit targets or continue immediately.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            OutlinedTextField(
+                                value = name,
+                                onValueChange = { name = it },
+                                label = { Text("Player Name") },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .weight(2f)
+                                    .testTag("welcome_name_input")
+                            )
+                            OutlinedTextField(
+                                value = ageInput,
+                                onValueChange = { ageInput = it },
+                                label = { Text("Age") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                        Text("Primary Position", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(PlayerPosition.entries) { pos ->
+                                val selected = pos == selectedPosition
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier
+                                        .height(42.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { selectedPosition = pos }
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "${pos.shortCode} • ${pos.displayName}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Your Name") },
-                    leadingIcon = { Icon(Icons.Default.Person, null, tint = EmeraldPrimary) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("welcome_name_input"),
-                    shape = RoundedCornerShape(14.dp),
-                    singleLine = true
-                )
+                        Text("Preferred Foot", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PreferredFoot.entries.forEach { foot ->
+                                val selected = foot == selectedFoot
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(42.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { selectedFoot = foot }
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = foot.displayName,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = currentWeightStr,
-                        onValueChange = { currentWeightStr = it },
-                        label = { Text("Current (kg)") },
-                        leadingIcon = { Icon(Icons.Default.MonitorWeight, null, tint = EmeraldPrimary) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = targetWeightStr,
-                        onValueChange = { targetWeightStr = it },
-                        label = { Text("Target (kg)") },
-                        leadingIcon = { Icon(Icons.Default.Favorite, null, tint = EmeraldPrimary) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true
-                    )
+                        Text("Experience Level", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            DifficultyLevel.entries.forEach { lvl ->
+                                val selected = lvl == selectedLevel
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(42.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { selectedLevel = lvl }
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = lvl.displayName,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = calorieGoalStr,
-                        onValueChange = { calorieGoalStr = it },
-                        label = { Text("Kcal Goal") },
-                        leadingIcon = { Icon(Icons.Default.LocalFireDepartment, null, tint = EmeraldPrimary) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = waterGoalStr,
-                        onValueChange = { waterGoalStr = it },
-                        label = { Text("Water (ml)") },
-                        leadingIcon = { Icon(Icons.Default.WaterDrop, null, tint = EmeraldPrimary) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = activityGoalStr,
-                    onValueChange = { activityGoalStr = it },
-                    label = { Text("Daily Walk & Jog Goal (minutes)") },
-                    leadingIcon = { Icon(Icons.Default.DirectionsRun, null, tint = EmeraldPrimary) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(18.dp))
 
                 Button(
                     onClick = {
-                        viewModel.enterAppWithProfile(
+                        viewModel.completeOnboarding(
                             name = name,
-                            currentWeightKg = currentWeightStr.toFloatOrNull() ?: 70.9f,
-                            targetWeightKg = targetWeightStr.toFloatOrNull() ?: 66.0f,
-                            dailyWaterGoalMl = waterGoalStr.toIntOrNull() ?: 2250,
-                            dailyCalorieGoal = calorieGoalStr.toIntOrNull() ?: 2000,
-                            dailyActivityMinutesGoal = activityGoalStr.toIntOrNull() ?: 30
+                            age = ageInput.toIntOrNull() ?: 19,
+                            position = selectedPosition,
+                            preferredFoot = selectedFoot,
+                            experienceLevel = selectedLevel
                         )
                     },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp)
-                        .testTag("enter_app_button"),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                        .height(54.dp)
+                        .testTag("enter_academy_button")
                 ) {
-                    Text(
-                        text = "Save & Enter Dashboard",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = Color.White
-                    )
+                    Icon(Icons.Default.SportsSoccer, null, tint = MaterialTheme.colorScheme.onPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White)
+                    Text(
+                        text = "Start Training Offline",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
                 OutlinedButton(
-                    onClick = { viewModel.quickEnterAsDemo() },
+                    onClick = {
+                        viewModel.completeOnboarding(
+                            name = name,
+                            age = 19,
+                            position = PlayerPosition.CENTRAL_MID,
+                            preferredFoot = PreferredFoot.RIGHT,
+                            experienceLevel = DifficultyLevel.INTERMEDIATE
+                        )
+                    },
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
-                        .testTag("quick_start_button"),
-                    shape = RoundedCornerShape(16.dp)
+                        .testTag("quick_start_button")
                 ) {
-                    Text(
-                        text = "Quick Start with Sample Data",
-                        fontWeight = FontWeight.SemiBold,
-                        color = EmeraldPrimary
-                    )
+                    Icon(Icons.Default.Shield, null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Quick Enter with Starter Profile", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }

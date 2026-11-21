@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">NutriFit Daily</string>
-    <string name="tagline">Track Your Health, Build Your Future</string>
+    <string name="app_name">Football Training</string>
+    <string name="app_tagline">Train Smart. Play Fearless. Offline.</string>
     <string name="nav_home">Home</string>
-    <string name="nav_nutrition">Nutrition</string>
-    <string name="nav_water">Water</string>
-    <string name="nav_activity">Activity</string>
+    <string name="nav_training">Training</string>
+    <string name="nav_programs">Programs</string>
     <string name="nav_progress">Progress</string>
+    <string name="nav_profile">Profile</string>
 </resources>

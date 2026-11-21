@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,105 +16,132 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DirectionsRun
-import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.SportsHandball
+import androidx.compose.material.icons.filled.SportsSoccer
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.luminance
+import com.example.R
 import com.example.data.local.DateUtils
-import com.example.data.model.ReminderCategory
-import com.example.ui.components.BotanicalCard
+import com.example.data.model.PlayerPosition
+import com.example.data.model.SkillCategory
 import com.example.ui.components.CircularProgressRing
-import com.example.ui.theme.CitrusAmber
-import com.example.ui.theme.CitrusLight
-import com.example.ui.theme.DangerRed
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ForestDeep
-import com.example.ui.theme.HydrationBlue
-import com.example.ui.theme.HydrationLight
-import com.example.ui.theme.MintContainerLight
-import com.example.ui.theme.MintVibrant
-import com.example.ui.theme.VioletLight
-import com.example.ui.theme.VioletWeight
-import com.example.viewmodel.NutriFitViewModel
+import com.example.ui.components.StadiumCard
+import com.example.ui.components.WeeklyActivityBarChart
+import com.example.ui.theme.AmberGlow
+import com.example.ui.theme.AmberTimer
+import com.example.ui.theme.CrimsonOpponent
+import com.example.ui.theme.FlameOrange
+import com.example.ui.theme.SpotlightGold
+import com.example.viewmodel.FootballViewModel
+import com.example.viewmodel.TrainingSubTab
 
 @Composable
 fun HomeDashboardScreen(
-    viewModel: NutriFitViewModel,
+    viewModel: FootballViewModel,
     modifier: Modifier = Modifier
 ) {
-    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
-    val overview by viewModel.todayOverview.collectAsStateWithLifecycle()
-    val reminders by viewModel.reminders.collectAsStateWithLifecycle()
+    val profile by viewModel.playerProfile.collectAsStateWithLifecycle()
+    val summary by viewModel.dashboardSummary.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val programCompletions by viewModel.programCompletions.collectAsStateWithLifecycle()
 
-    var showSettingsDialog by remember { mutableStateOf(false) }
-    var showAddReminderDialog by remember { mutableStateOf(false) }
-    var suggestedLoggedToast by remember { mutableStateOf<String?>(null) }
+    val position = PlayerPosition.entries.find { it.name == profile?.playingPosition } ?: PlayerPosition.CENTRAL_MID
+    val activeProgram = viewModel.programs.find { it.id == settings.activeProgramId } ?: viewModel.programs.first()
+    val completedDayNumbers = programCompletions
+        .filter { it.programId == activeProgram.id && it.isCompleted }
+        .map { it.dayNumber }
+        .toSet()
+    val nextDayPlan = activeProgram.days.firstOrNull { !completedDayNumbers.contains(it.dayNumber) } ?: activeProgram.days.last()
 
-    val todayKey = DateUtils.todayKey()
-    // Rotate suggestion based on day of month
-    val foodTip = remember(viewModel.foodSuggestions) {
-        val idx = (System.currentTimeMillis() / 86_400_000L).toInt() % viewModel.foodSuggestions.size
-        viewModel.foodSuggestions[idx]
-    }
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val dashCardBg = MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.82f else 0.88f)
+    val dashCardBorder = MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.34f else 0.42f)
 
-    LazyColumn(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = 96.dp)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Emerald Hero Header
-        item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(listOf(ForestDeep, EmeraldPrimary))
-                    )
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
-            ) {
-                Column {
+        // Full-screen uploaded Ronaldo #7 artwork as dashboard background
+        Image(
+            painter = painterResource(id = R.drawable.bg_dashboard_hero),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter
+        )
+
+        // Adaptive gradient scrim to keep artwork luminous at top and cards ultra-readable below
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    if (isDark) {
+                        Brush.verticalGradient(
+                            0.0f to Color(0xFF0A0705).copy(alpha = 0.42f),
+                            0.35f to Color(0xFF120B07).copy(alpha = 0.56f),
+                            0.72f to Color(0xFF0C0705).copy(alpha = 0.78f),
+                            1.0f to Color(0xFF0A0705).copy(alpha = 0.90f)
+                        )
+                    } else {
+                        Brush.verticalGradient(
+                            0.0f to Color(0xFFFDF8F2).copy(alpha = 0.52f),
+                            0.45f to Color(0xFFFDF8F2).copy(alpha = 0.72f),
+                            1.0f to Color(0xFFFDF8F2).copy(alpha = 0.90f)
+                        )
+                    }
+                )
+        )
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 1. Open Hero Header showcasing the background artwork + Player Profile & Stats Pill
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -121,178 +149,104 @@ fun HomeDashboardScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = DateUtils.formatDisplayDate(todayKey),
+                                text = DateUtils.formatDisplayDate(DateUtils.todayKey()),
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MintContainerLight
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) SpotlightGold else MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Hi, ${profile?.name?.split(" ")?.firstOrNull() ?: "Friend"}!",
+                                text = "Welcome, ${profile?.playerName?.split(" ")?.firstOrNull() ?: "Player"}!",
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = Color.White
+                                color = if (isDark) Color.White else MaterialTheme.colorScheme.onBackground
                             )
                         }
 
                         Surface(
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.18f),
-                            modifier = Modifier.size(48.dp)
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isDark) Color(0xFF1B100A).copy(alpha = 0.78f) else dashCardBg,
+                            modifier = Modifier
+                                .clickable { viewModel.navigateTo(AppScreen.Profile) }
+                                .testTag("home_profile_chip")
                         ) {
-                            IconButton(
-                                onClick = { showSettingsDialog = true },
-                                modifier = Modifier.testTag("open_settings_button")
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Settings,
-                                    contentDescription = "Profile & Goal Settings",
-                                    tint = Color.White
+                                    Icons.Default.Person,
+                                    "Profile",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = position.shortCode,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Breathing room so the golden spotlight & raised #7 celebration remain visible
+                    Spacer(modifier = Modifier.height(64.dp))
 
-                    // Daily Habit Score Card inside Header
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.White.copy(alpha = 0.15f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.navigateTo(AppScreen.Progress) }
+                    // Progress, Total Workouts & Streak Row
+                    StadiumCard(
+                        containerColor = dashCardBg,
+                        borderColor = dashCardBorder,
+                        onClick = { viewModel.navigateTo(AppScreen.Progress) }
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             CircularProgressRing(
-                                progress = overview.habitsCompleted / 4f,
-                                color = Color.White,
-                                trackColor = Color.White.copy(alpha = 0.25f),
-                                strokeWidth = 8.dp,
-                                modifier = Modifier.size(66.dp)
+                                progress = summary.activeProgramProgressPercent / 100f,
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 7.dp,
+                                modifier = Modifier.size(60.dp)
                             ) {
                                 Text(
-                                    text = "${overview.habitsCompleted}/4",
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 16.sp,
-                                    color = Color.White
+                                    text = "${summary.activeProgramProgressPercent}%",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(14.dp))
 
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Daily Healthy Habits",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = Color.White
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                HeroStatItem(
+                                    label = "Workouts",
+                                    value = "${summary.completedSessionsTotal}",
+                                    accent = MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = if (overview.habitsCompleted == 4)
-                                        "All 4 daily goals achieved! Keep it up!"
-                                    else
-                                        "Meals, hydration, weight & active minutes today.",
-                                    fontSize = 12.sp,
-                                    color = MintContainerLight,
-                                    lineHeight = 16.sp
+                                HeroStatItem(
+                                    label = "Streak",
+                                    value = "${summary.streakDays}d",
+                                    accent = CrimsonOpponent,
+                                    icon = Icons.Default.LocalFireDepartment
+                                )
+                                HeroStatItem(
+                                    label = "Minutes",
+                                    value = "${summary.totalMinutes}m",
+                                    accent = AmberGlow
                                 )
                             }
                         }
                     }
                 }
             }
-        }
 
-        // 2. 2x2 Today's Trackers Grid
-        item {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-                Text(
-                    text = "Today's Overview",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    DashboardMetricTile(
-                        title = "Daily Nutrition",
-                        mainValue = "${overview.caloriesConsumed} kcal",
-                        subText = "${overview.mealsCount} meals • Goal ${overview.calorieGoal}",
-                        progress = (overview.caloriesConsumed.toFloat() / overview.calorieGoal).coerceIn(0f, 1f),
-                        accentColor = EmeraldPrimary,
-                        bgTint = MintContainerLight,
-                        icon = Icons.Default.Restaurant,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("tile_nutrition"),
-                        onClick = { viewModel.navigateTo(AppScreen.Nutrition) }
-                    )
-
-                    DashboardMetricTile(
-                        title = "Water Intake",
-                        mainValue = "${overview.waterMl} ml",
-                        subText = "Goal ${overview.waterGoalMl} ml",
-                        progress = (overview.waterMl.toFloat() / overview.waterGoalMl).coerceIn(0f, 1f),
-                        accentColor = HydrationBlue,
-                        bgTint = HydrationLight,
-                        icon = Icons.Default.WaterDrop,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("tile_water"),
-                        onClick = { viewModel.navigateTo(AppScreen.Water) },
-                        quickActionLabel = "+250 ml",
-                        onQuickAction = { viewModel.addWater(250, "Quick Glass (250 ml)") }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    val delta = overview.latestWeightKg - overview.startWeightKg
-                    val deltaSign = if (delta > 0) "+" else ""
-                    DashboardMetricTile(
-                        title = "Weight Tracker",
-                        mainValue = String.format("%.1f kg", overview.latestWeightKg),
-                        subText = "${deltaSign}${String.format("%.1f", delta)} kg • Goal ${String.format("%.1f", overview.targetWeightKg)}",
-                        progress = if (overview.startWeightKg > overview.targetWeightKg) {
-                            ((overview.startWeightKg - overview.latestWeightKg) / (overview.startWeightKg - overview.targetWeightKg)).coerceIn(0.1f, 1f)
-                        } else 0.7f,
-                        accentColor = VioletWeight,
-                        bgTint = VioletLight,
-                        icon = Icons.Default.MonitorWeight,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("tile_weight"),
-                        onClick = { viewModel.navigateTo(AppScreen.Weight) }
-                    )
-
-                    DashboardMetricTile(
-                        title = "Walk & Jog",
-                        mainValue = "${overview.activityMinutes} min",
-                        subText = "${String.format("%.1f", overview.distanceKm)} km • ${overview.caloriesBurned} kcal",
-                        progress = (overview.activityMinutes.toFloat() / overview.activityGoalMinutes).coerceIn(0f, 1f),
-                        accentColor = CitrusAmber,
-                        bgTint = CitrusLight,
-                        icon = Icons.Default.DirectionsRun,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("tile_activity"),
-                        onClick = { viewModel.navigateTo(AppScreen.Activity) }
-                    )
-                }
-            }
-        }
-
-        // 3. Healthy Food Suggestion Card
+        // 2. Today's Training Plan Card
         item {
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                 Row(
@@ -301,432 +255,385 @@ fun HomeDashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Healthy Food Suggestion",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground
+                        text = "Today's Training Plan",
+                        style = MaterialTheme.typography.titleLarge
                     )
                     Text(
-                        text = "See all",
-                        fontSize = 13.sp,
+                        text = activeProgram.badge,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = EmeraldPrimary,
-                        modifier = Modifier.clickable { viewModel.navigateTo(AppScreen.Nutrition) }
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { viewModel.navigateTo(AppScreen.Programs) }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                BotanicalCard(
+                StadiumCard(
                     modifier = Modifier.fillMaxWidth(),
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = dashCardBg,
+                    borderColor = dashCardBorder
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(MintContainerLight),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Eco, null, tint = EmeraldPrimary)
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = foodTip.name,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                )
-                                Text(
-                                    text = "${foodTip.mealCategory.displayName} • ${foodTip.calories} kcal • ${foodTip.benefitTag}",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = EmeraldPrimary
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = foodTip.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (suggestedLoggedToast != null) {
-                                Text(
-                                    text = suggestedLoggedToast!!,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = EmeraldPrimary
-                                )
-                            } else {
-                                Text(
-                                    text = "P: ${foodTip.proteinGrams}g • C: ${foodTip.carbsGrams}g • F: ${foodTip.fatGrams}g",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            Button(
-                                onClick = {
-                                    viewModel.logSuggestedFood(foodTip)
-                                    suggestedLoggedToast = "Added to Today's Meals!"
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
-                                modifier = Modifier.testTag("log_suggested_food_button")
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer
                             ) {
-                                Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp), tint = Color.White)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Log Meal", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "${activeProgram.title} • Day ${nextDayPlan.dayNumber}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
                             }
+                            Text(
+                                text = "${nextDayPlan.durationMinutes} min",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
-                    }
-                }
-            }
-        }
 
-        // 4. Daily Health Reminders Section
-        item {
-            Spacer(modifier = Modifier.height(22.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.NotificationsActive, null, tint = EmeraldPrimary, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Daily Health Reminders",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
-                TextButton(onClick = { showAddReminderDialog = true }) {
-                    Text("+ Add", fontWeight = FontWeight.Bold, color = EmeraldPrimary)
-                }
-            }
-        }
+                        Spacer(modifier = Modifier.height(8.dp))
 
-        items(reminders) { reminder ->
-            val isDoneToday = reminder.lastCompletedDateKey == todayKey
-            BotanicalCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 5.dp),
-                onClick = { viewModel.toggleReminderCompletedToday(reminder) }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = if (isDoneToday) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                        contentDescription = if (isDoneToday) "Completed" else "Pending",
-                        tint = if (isDoneToday) EmeraldPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = reminder.title,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = if (isDoneToday) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                            text = nextDayPlan.title,
+                            style = MaterialTheme.typography.titleLarge
                         )
                         Text(
-                            text = reminder.description,
+                            text = "Focus: ${nextDayPlan.focusArea}",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        nextDayPlan.exercises.forEach { ex ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(ex, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Button(
+                                onClick = { viewModel.navigateTo(AppScreen.Programs) },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                                    .testTag("home_open_program_button")
+                            ) {
+                                Icon(Icons.Default.PlayArrow, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Open Plan", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .height(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { viewModel.openTrainingWithSubTab(TrainingSubTab.TIMERS) }
+                                    .testTag("home_quick_timer_button")
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Timer, "Timer", tint = AmberTimer, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text("Timers", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            }
+                        }
                     }
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MintContainerLight
-                    ) {
-                        Text(
-                            text = reminder.timeLabel,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ForestDeep,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                }
+            }
+        }
+
+        // 3. Quick Access Training Categories (6 Skill Modules + Fitness + Positions)
+        item {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Training Categories",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        text = "View all",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { viewModel.openTrainingWithSubTab(TrainingSubTab.MODULES) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(SkillCategory.entries) { cat ->
+                        val icon = when (cat) {
+                            SkillCategory.BALL_CONTROL -> Icons.Default.SportsSoccer
+                            SkillCategory.DRIBBLING -> Icons.Default.Bolt
+                            SkillCategory.PASSING -> Icons.AutoMirrored.Filled.DirectionsRun
+                            SkillCategory.SHOOTING -> Icons.Default.SportsSoccer
+                            SkillCategory.DEFENDING -> Icons.Default.Security
+                            SkillCategory.GOALKEEPER -> Icons.Default.SportsHandball
+                        }
+                        QuickCategoryTile(
+                            title = cat.displayName,
+                            subtitle = "5 drills",
+                            icon = icon,
+                            accent = MaterialTheme.colorScheme.primary,
+                            containerColor = dashCardBg,
+                            borderColor = dashCardBorder,
+                            onClick = { viewModel.openTrainingWithSubTab(TrainingSubTab.MODULES, cat) }
                         )
                     }
                 }
             }
         }
-    }
 
-    // Settings & Profile Modal
-    if (showSettingsDialog) {
-        var editName by remember { mutableStateOf(profile?.name ?: "Alex Morgan") }
-        var editCal by remember { mutableStateOf((profile?.dailyCalorieGoal ?: 2000).toString()) }
-        var editWater by remember { mutableStateOf((profile?.dailyWaterGoalMl ?: 2250).toString()) }
-        var editActivity by remember { mutableStateOf((profile?.dailyActivityMinutesGoal ?: 30).toString()) }
-        var editTargetW by remember { mutableStateOf(String.format("%.1f", profile?.targetWeightKg ?: 66.0f)) }
+        // 4. Quick Training Tools & Position Coaching Row
+        item {
+            Column(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Pro Tools & Coaching",
+                    style = MaterialTheme.typography.titleLarge
+                )
 
-        AlertDialog(
-            onDismissRequest = { showSettingsDialog = false },
-            title = { Text("Profile & Daily Goals", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = editName,
-                        onValueChange = { editName = it },
-                        label = { Text("Profile Name") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = editCal,
-                            onValueChange = { editCal = it },
-                            label = { Text("Calorie Goal") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = editWater,
-                            onValueChange = { editWater = it },
-                            label = { Text("Water (ml)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = editActivity,
-                            onValueChange = { editActivity = it },
-                            label = { Text("Activity (min)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = editTargetW,
-                            onValueChange = { editTargetW = it },
-                            label = { Text("Target kg") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "NutriFit Daily v1.0 • Offline Local Storage",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    OutlinedButton(
-                        onClick = {
-                            showSettingsDialog = false
-                            viewModel.signOutLocalProfile()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = DangerRed)
-                    ) {
-                        Text("Switch / Exit Profile", fontWeight = FontWeight.Bold)
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.updateGoals(
-                            name = editName,
-                            calorieGoal = editCal.toIntOrNull() ?: 2000,
-                            waterGoalMl = editWater.toIntOrNull() ?: 2250,
-                            activityMinutesGoal = editActivity.toIntOrNull() ?: 30,
-                            targetWeightKg = editTargetW.toFloatOrNull() ?: 66.0f
-                        )
-                        showSettingsDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text("Save Goals", color = Color.White)
+                    ToolShortcutCard(
+                        title = "Fitness",
+                        sub = "8 areas • 3 levels",
+                        icon = Icons.Default.FitnessCenter,
+                        accent = CrimsonOpponent,
+                        containerColor = dashCardBg,
+                        borderColor = dashCardBorder,
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.openTrainingWithSubTab(TrainingSubTab.FITNESS) }
+                    )
+                    ToolShortcutCard(
+                        title = "Positions",
+                        sub = "${position.shortCode} & 7 more",
+                        icon = Icons.Default.Person,
+                        accent = MaterialTheme.colorScheme.primary,
+                        containerColor = dashCardBg,
+                        borderColor = dashCardBorder,
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.openTrainingWithSubTab(TrainingSubTab.POSITIONS) }
+                    )
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSettingsDialog = false }) {
-                    Text("Cancel")
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ToolShortcutCard(
+                        title = "Tactics Board",
+                        sub = "Formations & arrows",
+                        icon = Icons.Default.Palette,
+                        accent = AmberGlow,
+                        containerColor = dashCardBg,
+                        borderColor = dashCardBorder,
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.openTrainingWithSubTab(TrainingSubTab.TACTICS) }
+                    )
+                    ToolShortcutCard(
+                        title = "Planner & Cal",
+                        sub = "Weekly schedule",
+                        icon = Icons.Default.CalendarMonth,
+                        accent = FlameOrange,
+                        containerColor = dashCardBg,
+                        borderColor = dashCardBorder,
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.openTrainingWithSubTab(TrainingSubTab.PLANNER) }
+                    )
                 }
             }
-        )
-    }
+        }
 
-    // Add Custom Reminder Dialog
-    if (showAddReminderDialog) {
-        var remTitle by remember { mutableStateOf("") }
-        var remDesc by remember { mutableStateOf("") }
-        var remTime by remember { mutableStateOf("06:00 PM") }
-        var remCat by remember { mutableStateOf(ReminderCategory.ACTIVITY) }
-
-        AlertDialog(
-            onDismissRequest = { showAddReminderDialog = false },
-            title = { Text("New Health Reminder", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = remTitle,
-                        onValueChange = { remTitle = it },
-                        label = { Text("Reminder Title") },
-                        placeholder = { Text("E.g. Drink Green Tea") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = remDesc,
-                        onValueChange = { remDesc = it },
-                        label = { Text("Details") },
-                        placeholder = { Text("Optional helpful note") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = remTime,
-                        onValueChange = { remTime = it },
-                        label = { Text("Time (e.g. 08:30 AM)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ReminderCategory.entries.forEach { cat ->
-                            val selected = remCat == cat
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (selected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.clickable { remCat = cat }
-                            ) {
+        // 5. Weekly Activity Summary Chart
+        item {
+            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                StadiumCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = dashCardBg,
+                    borderColor = dashCardBorder,
+                    onClick = { viewModel.navigateTo(AppScreen.Progress) }
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
                                 Text(
-                                    text = cat.displayName,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                                    text = "Weekly Activity Summary",
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                                Text(
+                                    text = "${summary.todayCompletedCount} sessions completed today",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Open Progress",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        WeeklyActivityBarChart(
+                            points = summary.weeklyPoints,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (remTitle.isNotBlank()) {
-                            viewModel.addCustomReminder(remTitle, remDesc, remTime, remCat)
-                            showAddReminderDialog = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
-                ) {
-                    Text("Save", color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddReminderDialog = false }) {
-                    Text("Cancel")
-                }
             }
+        }
+        }
+    }
+}
+
+@Composable
+private fun HeroStatItem(
+    label: String,
+    value: String,
+    accent: Color,
+    icon: ImageVector? = null
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) {
+                Icon(icon, null, tint = accent, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(2.dp))
+            }
+            Text(
+                text = value,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = accent
+            )
+        }
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
 @Composable
-private fun DashboardMetricTile(
+private fun QuickCategoryTile(
     title: String,
-    mainValue: String,
-    subText: String,
-    progress: Float,
-    accentColor: Color,
-    bgTint: Color,
+    subtitle: String,
     icon: ImageVector,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    quickActionLabel: String? = null,
-    onQuickAction: (() -> Unit)? = null
+    accent: Color,
+    containerColor: Color,
+    borderColor: Color,
+    onClick: () -> Unit
 ) {
-    BotanicalCard(
-        modifier = modifier,
+    StadiumCard(
+        modifier = Modifier
+            .width(126.dp)
+            .testTag("quick_cat_${title.lowercase().replace(" ", "_")}"),
+        containerColor = containerColor,
+        borderColor = borderColor,
         onClick = onClick
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(bgTint),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(icon, contentDescription = title, tint = accentColor, modifier = Modifier.size(20.dp))
-                }
-
-                if (quickActionLabel != null && onQuickAction != null) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = accentColor,
-                        modifier = Modifier
-                            .clickable { onQuickAction() }
-                            .testTag("quick_add_water_tile")
-                    ) {
-                        Text(
-                            text = quickActionLabel,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = title,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = mainValue,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = subText,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LinearProgressIndicator(
-                progress = { progress.coerceIn(0f, 1f) },
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(CircleShape),
-                color = accentColor,
-                trackColor = bgTint
-            )
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(accent.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = title, tint = accent, modifier = Modifier.size(20.dp))
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1)
+            Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun ToolShortcutCard(
+    title: String,
+    sub: String,
+    icon: ImageVector,
+    accent: Color,
+    containerColor: Color,
+    borderColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    StadiumCard(
+        modifier = modifier,
+        containerColor = containerColor,
+        borderColor = borderColor,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(accent.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = title, tint = accent, modifier = Modifier.size(20.dp))
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(sub, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
         }
     }
 }

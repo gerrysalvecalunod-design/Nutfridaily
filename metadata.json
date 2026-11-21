@@ -1,6 +1,6 @@
 {
-  "name": "NutriFit Daily",
-  "description": "Offline daily health habit tracker for nutrition, water intake, weight monitoring, walking and jogging, healthy food suggestions, and progress analytics.",
+  "name": "Football Training",
+  "description": "Offline football training mobile app with skill drills, fitness tiers, position coaching, 7/30/90-day programs, timers, planner, interactive tactics board, and progress analytics.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1,60 +1,62 @@
 package com.example.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = MintVibrant,
-    onPrimary = ForestDeep,
-    primaryContainer = MintContainerDark,
-    onPrimaryContainer = MintContainerLight,
-    secondary = HydrationBlue,
-    onSecondary = SurfaceLight,
-    secondaryContainer = HydrationDark,
-    onSecondaryContainer = HydrationLight,
-    tertiary = CitrusGold,
-    background = BackgroundDark,
+private val FootballDarkColorScheme = darkColorScheme(
+    primary = SpotlightGold,
+    onPrimary = PitchBlack,
+    primaryContainer = TurfDeepGreen,
+    onPrimaryContainer = SpotlightGold,
+    secondary = CrimsonOpponent,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFF3A1414),
+    onSecondaryContainer = Color(0xFFFECACA),
+    tertiary = AmberGlow,
+    background = PitchBlack,
     onBackground = TextPrimaryDark,
-    surface = SurfaceDark,
+    surface = CardDarkSurface,
     onSurface = TextPrimaryDark,
-    surfaceVariant = SurfaceVariantDark,
+    surfaceVariant = CardDarkVariant,
     onSurfaceVariant = TextSecondaryDark,
-    error = DangerRed
+    outline = BorderDarkGreen,
+    error = CrimsonOpponent
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = EmeraldPrimary,
-    onPrimary = SurfaceLight,
-    primaryContainer = MintContainerLight,
-    onPrimaryContainer = ForestDeep,
-    secondary = HydrationBlue,
-    onSecondary = SurfaceLight,
-    secondaryContainer = HydrationLight,
-    onSecondaryContainer = HydrationDark,
-    tertiary = CitrusAmber,
+private val FootballLightColorScheme = lightColorScheme(
+    primary = GoldCrimsonPrimary,
+    onPrimary = Color.White,
+    primaryContainer = SurfaceVariantLight,
+    onPrimaryContainer = DeepEspressoText,
+    secondary = JerseyCrimson,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFFEE2E2),
+    onSecondaryContainer = Color(0xFF7F1D1D),
+    tertiary = AmberTimer,
     background = BackgroundLight,
-    onBackground = TextPrimaryLight,
+    onBackground = DeepEspressoText,
     surface = SurfaceLight,
-    onSurface = TextPrimaryLight,
+    onSurface = DeepEspressoText,
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = TextSecondaryLight,
-    error = DangerRed
+    outline = Color(0xFFE2C9AE),
+    error = CrimsonOpponent
 )
 
 @Composable
-fun NutriFitTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+fun FootballProTheme(
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (darkTheme) FootballDarkColorScheme else FootballLightColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
