@@ -12,68 +12,62 @@ import com.example.data.model.AppSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.footballSettingsStore: DataStore<Preferences> by preferencesDataStore(
-    name = "footballpro_settings"
+private val Context.badmintonSettingsStore: DataStore<Preferences> by preferencesDataStore(
+    name = "badminton_pro_settings"
 )
 
 class SettingsDataStore(private val context: Context) {
     private object Keys {
         val IS_DARK_THEME = booleanPreferencesKey("is_dark_theme")
         val SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
-        val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
-        val REMINDER_TIME = stringPreferencesKey("reminder_time")
-        val ACTIVE_PROGRAM_ID = stringPreferencesKey("active_program_id")
-        val APP_LANGUAGE = stringPreferencesKey("app_language")
+        val SOUND_TONE_INDEX = intPreferencesKey("sound_tone_index")
+        val PREFERRED_DURATION = intPreferencesKey("preferred_duration_minutes")
         val DAILY_MINUTES_GOAL = intPreferencesKey("daily_minutes_goal")
         val WEEKLY_SESSIONS_GOAL = intPreferencesKey("weekly_sessions_goal")
+        val ACTIVE_PROGRAM_ID = stringPreferencesKey("active_program_id")
     }
 
-    val settingsFlow: Flow<AppSettings> = context.footballSettingsStore.data.map { prefs ->
+    val settingsFlow: Flow<AppSettings> = context.badmintonSettingsStore.data.map { prefs ->
         AppSettings(
-            isDarkTheme = prefs[Keys.IS_DARK_THEME] ?: true,
+            isDarkTheme = prefs[Keys.IS_DARK_THEME] ?: false,
             soundEnabled = prefs[Keys.SOUND_ENABLED] ?: true,
-            reminderEnabled = prefs[Keys.REMINDER_ENABLED] ?: true,
-            reminderTimeLabel = prefs[Keys.REMINDER_TIME] ?: "05:30 PM",
-            activeProgramId = prefs[Keys.ACTIVE_PROGRAM_ID] ?: "program_7",
-            appLanguage = prefs[Keys.APP_LANGUAGE] ?: "en",
-            dailyMinutesGoal = prefs[Keys.DAILY_MINUTES_GOAL] ?: 20,
-            weeklySessionsGoal = prefs[Keys.WEEKLY_SESSIONS_GOAL] ?: 5
+            soundToneIndex = prefs[Keys.SOUND_TONE_INDEX] ?: 0,
+            preferredDurationMinutes = prefs[Keys.PREFERRED_DURATION] ?: 30,
+            dailyMinutesGoal = prefs[Keys.DAILY_MINUTES_GOAL] ?: 30,
+            weeklySessionsGoal = prefs[Keys.WEEKLY_SESSIONS_GOAL] ?: 5,
+            activeProgramId = prefs[Keys.ACTIVE_PROGRAM_ID] ?: "prog_beginner"
         )
     }
 
     suspend fun setDarkTheme(enabled: Boolean) {
-        context.footballSettingsStore.edit { it[Keys.IS_DARK_THEME] = enabled }
+        context.badmintonSettingsStore.edit { it[Keys.IS_DARK_THEME] = enabled }
     }
 
     suspend fun setSoundEnabled(enabled: Boolean) {
-        context.footballSettingsStore.edit { it[Keys.SOUND_ENABLED] = enabled }
+        context.badmintonSettingsStore.edit { it[Keys.SOUND_ENABLED] = enabled }
     }
 
-    suspend fun setReminderEnabled(enabled: Boolean) {
-        context.footballSettingsStore.edit { it[Keys.REMINDER_ENABLED] = enabled }
+    suspend fun setSoundToneIndex(index: Int) {
+        context.badmintonSettingsStore.edit { it[Keys.SOUND_TONE_INDEX] = index.coerceIn(0, 2) }
     }
 
-    suspend fun setReminderTime(timeLabel: String) {
-        context.footballSettingsStore.edit { it[Keys.REMINDER_TIME] = timeLabel }
-    }
-
-    suspend fun setActiveProgramId(programId: String) {
-        context.footballSettingsStore.edit { it[Keys.ACTIVE_PROGRAM_ID] = programId }
-    }
-
-    suspend fun setAppLanguage(languageCode: String) {
-        context.footballSettingsStore.edit { it[Keys.APP_LANGUAGE] = languageCode }
+    suspend fun setPreferredDuration(minutes: Int) {
+        context.badmintonSettingsStore.edit { it[Keys.PREFERRED_DURATION] = minutes.coerceIn(10, 120) }
     }
 
     suspend fun setDailyMinutesGoal(minutes: Int) {
-        context.footballSettingsStore.edit { it[Keys.DAILY_MINUTES_GOAL] = minutes.coerceIn(5, 240) }
+        context.badmintonSettingsStore.edit { it[Keys.DAILY_MINUTES_GOAL] = minutes.coerceIn(10, 180) }
     }
 
     suspend fun setWeeklySessionsGoal(sessions: Int) {
-        context.footballSettingsStore.edit { it[Keys.WEEKLY_SESSIONS_GOAL] = sessions.coerceIn(1, 21) }
+        context.badmintonSettingsStore.edit { it[Keys.WEEKLY_SESSIONS_GOAL] = sessions.coerceIn(1, 14) }
+    }
+
+    suspend fun setActiveProgramId(programId: String) {
+        context.badmintonSettingsStore.edit { it[Keys.ACTIVE_PROGRAM_ID] = programId }
     }
 
     suspend fun resetAllSettings() {
-        context.footballSettingsStore.edit { it.clear() }
+        context.badmintonSettingsStore.edit { it.clear() }
     }
 }

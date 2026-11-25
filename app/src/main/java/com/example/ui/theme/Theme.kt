@@ -11,52 +11,52 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val FootballDarkColorScheme = darkColorScheme(
-    primary = SpotlightGold,
-    onPrimary = PitchBlack,
-    primaryContainer = TurfDeepGreen,
-    onPrimaryContainer = SpotlightGold,
-    secondary = CrimsonOpponent,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFF3A1414),
-    onSecondaryContainer = Color(0xFFFECACA),
-    tertiary = AmberGlow,
-    background = PitchBlack,
-    onBackground = TextPrimaryDark,
-    surface = CardDarkSurface,
-    onSurface = TextPrimaryDark,
-    surfaceVariant = CardDarkVariant,
-    onSurfaceVariant = TextSecondaryDark,
-    outline = BorderDarkGreen,
-    error = CrimsonOpponent
+private val BadmintonDarkColorScheme = darkColorScheme(
+    primary = ElectricCyanPrimary,
+    onPrimary = ArenaNavyBlack,
+    primaryContainer = CourtCyanContainer,
+    onPrimaryContainer = Color(0xFFBAE6FD),
+    secondary = SkyBlueHighlight,
+    onSecondary = ArenaNavyBlack,
+    secondaryContainer = Color(0xFF152C52),
+    onSecondaryContainer = Color(0xFFE0F2FE),
+    tertiary = AmberTimer,
+    background = ArenaNavyBlack,
+    onBackground = TextWhitePrimary,
+    surface = CourtCardSurface,
+    onSurface = TextWhitePrimary,
+    surfaceVariant = CourtCardVariant,
+    onSurfaceVariant = TextSilverSecondary,
+    outline = CourtBorderBlue,
+    error = AlertCoral
 )
 
-private val FootballLightColorScheme = lightColorScheme(
-    primary = GoldCrimsonPrimary,
+private val BadmintonLightColorScheme = lightColorScheme(
+    primary = LightPrimaryNavy,
     onPrimary = Color.White,
-    primaryContainer = SurfaceVariantLight,
-    onPrimaryContainer = DeepEspressoText,
-    secondary = JerseyCrimson,
+    primaryContainer = Color(0xFFD6E9FF),
+    onPrimaryContainer = ArenaDeepNavy,
+    secondary = CobaltAccent,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFEE2E2),
-    onSecondaryContainer = Color(0xFF7F1D1D),
+    secondaryContainer = Color(0xFFE0F2FE),
+    onSecondaryContainer = Color(0xFF075985),
     tertiary = AmberTimer,
-    background = BackgroundLight,
-    onBackground = DeepEspressoText,
-    surface = SurfaceLight,
-    onSurface = DeepEspressoText,
-    surfaceVariant = SurfaceVariantLight,
-    onSurfaceVariant = TextSecondaryLight,
-    outline = Color(0xFFE2C9AE),
-    error = CrimsonOpponent
+    background = LightCourtBg,
+    onBackground = LightBlackInk,
+    surface = LightCardSurface,
+    onSurface = LightBlackInk,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = LightMutedInk,
+    outline = LightBorderBlue,
+    error = AlertCoral
 )
 
 @Composable
-fun FootballProTheme(
-    darkTheme: Boolean = true,
+fun BadmintonProTheme(
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) FootballDarkColorScheme else FootballLightColorScheme
+    val colorScheme = if (darkTheme) BadmintonDarkColorScheme else BadmintonLightColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {

@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">Football Training</string>
-    <string name="app_tagline">Train Smart. Play Fearless. Offline.</string>
+    <string name="app_name">Badminton Pro</string>
+    <string name="app_tagline">TRAIN SMART. PLAY BETTER.</string>
     <string name="nav_home">Home</string>
     <string name="nav_training">Training</string>
-    <string name="nav_programs">Programs</string>
-    <string name="nav_history">History</string>
-    <string name="nav_settings">Settings</string>
+    <string name="nav_planner">Planner</string>
+    <string name="nav_progress">Progress</string>
+    <string name="nav_profile">Profile</string>
 </resources>

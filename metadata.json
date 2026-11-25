@@ -1,6 +1,6 @@
 {
-  "name": "Football Training",
-  "description": "Offline football training mobile app with skill drills, fitness tiers, position coaching, 7/30/90-day programs, timers, planner, interactive tactics board, and progress analytics.",
+  "name": "Badminton Pro",
+  "description": "100% offline badminton training mobile app with beginner/intermediate/advanced programs, 9 skill categories, interactive training timer, daily workout planner, progress analytics, rules & court lessons, and conditioning.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

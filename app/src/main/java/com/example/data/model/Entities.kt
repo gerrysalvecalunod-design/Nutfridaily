@@ -3,177 +3,140 @@ package com.example.data.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-enum class SkillCategory(val displayName: String, val subtitle: String) {
-    BALL_CONTROL("Ball Control", "First touch, mastery & juggling"),
-    DRIBBLING("Dribbling", "Cones, speed & 1v1 feints"),
-    PASSING("Passing", "Short, long & one-touch"),
-    SHOOTING("Shooting", "Power, placement & volleys"),
-    DEFENDING("Defending", "Tackling, marking & positioning"),
-    GOALKEEPER("Goalkeeper", "Diving, catching & distribution")
+enum class SkillLevel(val displayName: String, val subtitle: String) {
+    BEGINNER("Beginner", "Rules, grips, ready stance & fundamentals"),
+    INTERMEDIATE("Intermediate", "Smashes, drops, clears, net play & defense"),
+    ADVANCED("Advanced", "Jump smashes, deception, combos & tactics")
 }
 
-enum class FitnessCategory(val displayName: String) {
-    SPEED("Speed"),
-    AGILITY("Agility"),
-    STAMINA("Stamina"),
-    ENDURANCE("Endurance"),
-    STRENGTH("Strength"),
-    JUMP("Jump Training"),
+enum class TrainingCategory(val displayName: String, val subtitle: String) {
+    FOOTWORK("Footwork Training", "6-corner steps, split-step & court recovery"),
+    SMASH("Smash Training", "Power pronation, jump smash & steep angles"),
+    SERVING("Serving Training", "Short backhand, flick & high deep serves"),
+    DEFENSIVE("Defensive Training", "Low blocks, high lifts & flat drive defense"),
+    SPEED_AGILITY("Speed & Agility", "Explosive lunges, chasse & sprint bursts"),
+    ENDURANCE("Endurance Training", "Multi-shuttle stamina & rally conditioning"),
+    ACCURACY("Accuracy Training", "Target cones, line drops & tight net shots"),
+    REACTION_TIME("Reaction Time", "Fast drive exchanges & reflex shadow cues"),
+    MATCH_STRATEGY("Match Strategy", "Singles pressure & doubles rotation tactics")
+}
+
+enum class FitnessArea(val displayName: String) {
     WARMUP("Warm-up"),
-    COOLDOWN("Cooldown & Stretch")
+    STRETCHING("Stretching"),
+    JUMP_ROPE("Jump Rope"),
+    SQUATS("Squats"),
+    LUNGES("Lunges"),
+    PLANKS("Planks"),
+    AGILITY_DRILLS("Agility Drills"),
+    COOLDOWN("Cool-down")
 }
 
-enum class PlayerPosition(val shortCode: String, val displayName: String, val roleSummary: String) {
-    GOALKEEPER("GK", "Goalkeeper", "Shot-stopping, commanding the box & distribution"),
-    CENTER_BACK("CB", "Center Back", "Aerial dominance, line organization & clean tackles"),
-    FULL_BACK("FB", "Full Back", "1v1 defending, overlapping stamina & whipped crosses"),
-    DEFENSIVE_MID("CDM", "Defensive Midfielder", "Interceptions, shielding the backline & tempo passes"),
-    CENTRAL_MID("CM", "Central Midfielder", "360° scanning, box-to-box stamina & link-up play"),
-    ATTACKING_MID("CAM", "Attacking Midfielder", "Half-space turns, through balls & edge-of-box shots"),
-    WINGER("WG", "Winger", "Explosive 1v1 dribbling, cut-insides & final-third delivery"),
-    STRIKER("ST", "Striker", "Box movement, clinical 1-touch finishing & hold-up play")
-}
-
-enum class DifficultyLevel(val displayName: String) {
-    BEGINNER("Beginner"),
-    INTERMEDIATE("Intermediate"),
-    ADVANCED("Advanced")
-}
-
-enum class PreferredFoot(val displayName: String) {
-    RIGHT("Right Foot"),
-    LEFT("Left Foot"),
-    BOTH("Both Feet")
-}
-
-enum class DrillDiagramType {
-    CONES_SLALOM,
-    TRIANGLE_PASSING,
-    SHOOTING_ARCS,
-    DEFENSIVE_CHANNEL,
-    GOALKEEPER_ARCS,
-    SPRINT_LANES,
-    JUGGLE_CIRCLE
-}
-
-enum class LessonGroup {
-    SKILL_MODULE,
+enum class LessonSection {
+    PROGRAM,
+    CATEGORY,
     FITNESS,
-    POSITION
+    RULES
 }
 
-data class TrainingLesson(
+enum class CourtDiagramType {
+    SIX_CORNER_FOOTWORK,
+    SMASH_TRAJECTORY,
+    SERVE_ZONES,
+    NET_HAIRPIN,
+    DEFENSE_BLOCK,
+    CLEAR_AND_DROP,
+    DOUBLES_ROTATION,
+    COURT_DIMENSIONS,
+    CONDITIONING_AGILITY
+}
+
+data class BadmintonExercise(
     val id: String,
-    val title: String,
-    val group: LessonGroup,
-    val categoryKey: String, // SkillCategory.name or FitnessCategory.name or PlayerPosition.name
+    val name: String,
+    val section: LessonSection,
+    val categoryKey: String,
     val categoryLabel: String,
     val description: String,
     val instructions: List<String>,
-    val difficulty: DifficultyLevel,
+    val durationMinutes: Int,
+    val timerWorkSeconds: Int,
+    val difficulty: SkillLevel,
     val recommendedReps: String,
-    val durationMinutes: Int,
-    val equipment: String,
-    val coachingTips: List<String>,
-    val diagramType: DrillDiagramType
+    val restTimeSeconds: Int,
+    val trainingTips: List<String>,
+    val safetyInstructions: List<String> = emptyList(),
+    val diagramType: CourtDiagramType = CourtDiagramType.SIX_CORNER_FOOTWORK,
+    val motionPhases: List<String> = listOf(
+        "Ready Stance: Knees bent, racket up",
+        "Split-Step: Push off as opponent strikes",
+        "Execute Stroke: Clean contact in front",
+        "Recover Base: Return to center court"
+    )
 )
 
-data class ProgramDayPlan(
-    val dayNumber: Int,
-    val title: String,
-    val isRestDay: Boolean,
-    val durationMinutes: Int,
-    val focusArea: String,
-    val exercises: List<String>
-)
-
-data class TrainingProgram(
+data class BadmintonProgram(
     val id: String,
+    val level: SkillLevel,
     val title: String,
-    val totalDays: Int,
     val badge: String,
     val description: String,
-    val weeklyStructureSummary: String,
-    val days: List<ProgramDayPlan>
+    val focusSummary: String,
+    val moduleIds: List<String>
 )
-
-data class TacticMarker(
-    val id: String,
-    val label: String,
-    val xFraction: Float,
-    val yFraction: Float,
-    val team: String // "HOME", "AWAY", "BALL"
-)
-
-data class TacticArrow(
-    val id: String,
-    val startX: Float,
-    val startY: Float,
-    val endX: Float,
-    val endY: Float
-)
-
-enum class AppLanguage(val code: String, val displayName: String) {
-    ENGLISH("en", "English"),
-    TAGALOG("tl", "Tagalog")
-}
 
 data class AppSettings(
-    val isDarkTheme: Boolean = true,
+    val isDarkTheme: Boolean = false,
     val soundEnabled: Boolean = true,
-    val reminderEnabled: Boolean = true,
-    val reminderTimeLabel: String = "05:30 PM",
-    val activeProgramId: String = "program_7",
-    val appLanguage: String = AppLanguage.ENGLISH.code,
-    val dailyMinutesGoal: Int = 20,
-    val weeklySessionsGoal: Int = 5
+    val soundToneIndex: Int = 0, // 0 = Crisp Beep, 1 = Whistle Cue, 2 = Soft Chime
+    val preferredDurationMinutes: Int = 30,
+    val dailyMinutesGoal: Int = 30,
+    val weeklySessionsGoal: Int = 5,
+    val activeProgramId: String = "prog_beginner"
 )
 
 @Entity(tableName = "player_profile")
 data class PlayerProfileEntity(
     @PrimaryKey val id: Int = 1,
-    val playerName: String = "Striker One",
-    val age: Int = 19,
-    val heightCm: Int = 176,
-    val weightKg: Float = 70.0f,
-    val playingPosition: String = PlayerPosition.CENTRAL_MID.name,
-    val preferredFoot: String = PreferredFoot.RIGHT.name,
-    val experienceLevel: String = DifficultyLevel.INTERMEDIATE.name,
-    val personalGoals: String = "Improve weak-foot finishing, first touch under pressure, and 90-minute match stamina.",
+    val playerName: String = "",
+    val skillLevel: String = SkillLevel.BEGINNER.name,
+    val trainingGoals: String = "Build crisp 6-corner footwork, consistent low serves, and explosive smash power.",
+    val preferredDurationMinutes: Int = 30,
     val onboardingCompleted: Boolean = false,
     val updatedAt: Long = System.currentTimeMillis()
 )
 
-@Entity(tableName = "training_goals")
-data class TrainingGoalEntity(
+@Entity(tableName = "completed_sessions")
+data class CompletedSessionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val title: String,
-    val category: String = "Skill",
-    val targetValue: Int = 5,
-    val currentValue: Int = 0,
-    val unit: String = "sessions",
-    val isCompleted: Boolean = false,
-    val createdDateKey: String = ""
-)
-
-@Entity(tableName = "completed_lessons")
-data class CompletedLessonEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val lessonId: String,
+    val exerciseId: String,
     val dateKey: String,
     val categoryKey: String,
     val categoryLabel: String,
     val title: String,
     val durationMinutes: Int,
+    val drillsSummary: String = "",
+    val resultSummary: String = "Completed",
     val timestamp: Long = System.currentTimeMillis()
 )
 
-@Entity(tableName = "program_day_completions", primaryKeys = ["programId", "dayNumber"])
-data class ProgramDayCompletionEntity(
+@Entity(tableName = "program_module_completions", primaryKeys = ["programId", "moduleId"])
+data class ProgramModuleCompletionEntity(
     val programId: String,
-    val dayNumber: Int,
+    val moduleId: String,
     val isCompleted: Boolean,
     val completedDateKey: String = ""
+)
+
+@Entity(tableName = "planned_workouts")
+data class PlannedWorkoutEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dayOfWeek: String, // Mon..Sun
+    val title: String,
+    val categoryLabel: String,
+    val exerciseIdsSerialized: String = "",
+    val durationMinutes: Int = 30,
+    val isCompleted: Boolean = false
 )
 
 @Entity(tableName = "personal_records")
@@ -185,24 +148,39 @@ data class PersonalRecordEntity(
     val updatedDateKey: String
 )
 
-@Entity(tableName = "saved_tactics")
-data class SavedTacticEntity(
+@Entity(tableName = "training_goals")
+data class TrainingGoalEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String,
-    val formation: String,
-    val markersSerialized: String,
-    val arrowsSerialized: String,
-    val notes: String = "",
-    val updatedAt: Long = System.currentTimeMillis()
+    val title: String,
+    val category: String = "Footwork",
+    val targetValue: Int = 5,
+    val currentValue: Int = 0,
+    val unit: String = "sessions",
+    val isCompleted: Boolean = false,
+    val createdDateKey: String = ""
 )
 
-@Entity(tableName = "planned_workouts")
-data class PlannedWorkoutEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val dayOfWeek: String, // Mon..Sun
-    val dateKey: String,
+@Entity(tableName = "achievements")
+data class AchievementEntity(
+    @PrimaryKey val id: String,
     val title: String,
-    val categoryLabel: String,
-    val durationMinutes: Int,
-    val isCompleted: Boolean = false
+    val description: String,
+    val unlocked: Boolean = false,
+    val unlockedDateKey: String = "",
+    val progressCurrent: Int = 0,
+    val progressTarget: Int = 1
+)
+
+@Entity(tableName = "saved_training_checkpoint")
+data class SavedTrainingCheckpointEntity(
+    @PrimaryKey val id: Int = 1,
+    val queueIdsSerialized: String = "",
+    val customTitle: String = "",
+    val currentIndex: Int = 0,
+    val phase: String = "WORK",
+    val totalPhaseSeconds: Int = 60,
+    val remainingSeconds: Int = 60,
+    val completedInSessionCount: Int = 0,
+    val isActive: Boolean = false,
+    val updatedAt: Long = System.currentTimeMillis()
 )

@@ -22,9 +22,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Timer
@@ -32,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -44,51 +47,49 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.model.DifficultyLevel
-import com.example.data.model.FitnessCategory
-import com.example.data.model.PlayerPosition
-import com.example.data.model.SkillCategory
-import com.example.data.model.TrainingLesson
-import com.example.ui.components.DrillDiagramCanvas
-import com.example.ui.components.StadiumCard
+import com.example.data.model.BadmintonExercise
+import com.example.data.model.FitnessArea
+import com.example.data.model.SkillLevel
+import com.example.data.model.TrainingCategory
+import com.example.ui.components.OfflineAnimatedCourtPlayer
+import com.example.ui.components.SportyCard
 import com.example.ui.theme.AmberTimer
-import com.example.ui.theme.GoldTrophy
-import com.example.ui.theme.NeonPitchGreen
-import com.example.ui.theme.TacticalCyan
-import com.example.viewmodel.FootballViewModel
+import com.example.ui.theme.CobaltAccent
+import com.example.ui.theme.CourtCyan
+import com.example.ui.theme.EmeraldSuccess
+import com.example.ui.theme.VictoryGold
+import com.example.viewmodel.BadmintonViewModel
 import com.example.viewmodel.TrainingSubTab
 
 @Composable
 fun TrainingScreen(
-    viewModel: FootballViewModel,
+    viewModel: BadmintonViewModel,
     modifier: Modifier = Modifier
 ) {
     val subTab by viewModel.trainingSubTab.collectAsStateWithLifecycle()
-    val selectedLesson by viewModel.selectedLesson.collectAsStateWithLifecycle()
-    val selectedSkillFilter by viewModel.selectedSkillFilter.collectAsStateWithLifecycle()
-    val completedLessons by viewModel.completedLessons.collectAsStateWithLifecycle()
+    val selectedExercise by viewModel.selectedExercise.collectAsStateWithLifecycle()
+    val selectedCategory by viewModel.selectedCategoryFilter.collectAsStateWithLifecycle()
+    val selectedProgramId by viewModel.selectedProgramId.collectAsStateWithLifecycle()
+    val completedSessions by viewModel.completedSessions.collectAsStateWithLifecycle()
+    val programCompletions by viewModel.programCompletions.collectAsStateWithLifecycle()
 
-    val completedIds = remember(completedLessons) {
-        completedLessons.map { it.lessonId }.toSet()
+    val completedIds = remember(completedSessions) {
+        completedSessions.map { it.exerciseId }.toSet()
     }
 
-    if (selectedLesson != null) {
-        BackHandler { viewModel.closeLesson() }
-        LessonDetailView(
-            lesson = selectedLesson!!,
-            isCompletedOnce = completedIds.contains(selectedLesson!!.id),
-            onBack = { viewModel.closeLesson() },
-            onMarkCompleted = { viewModel.markLessonCompleted(selectedLesson!!) },
-            onOpenTimer = {
-                viewModel.closeLesson()
-                viewModel.selectTrainingSubTab(TrainingSubTab.TIMERS)
-            }
+    if (selectedExercise != null) {
+        BackHandler { viewModel.closeExercise() }
+        ExerciseDetailScreen(
+            exercise = selectedExercise!!,
+            isCompletedOnce = completedIds.contains(selectedExercise!!.id),
+            onBack = { viewModel.closeExercise() },
+            onMarkCompleted = { viewModel.logExerciseCompleted(selectedExercise!!) },
+            onStartInTimer = { viewModel.launchExercisesInTimer(listOf(selectedExercise!!), selectedExercise!!.name) }
         )
         return
     }
@@ -99,18 +100,14 @@ fun TrainingScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
+            Text("Badminton Training", style = MaterialTheme.typography.headlineLarge)
             Text(
-                text = "Training Hub",
-                style = MaterialTheme.typography.headlineLarge
-            )
-            Text(
-                text = "Drills, fitness, position coaching & tactical tools",
+                text = "Programs, 9 skill modules, conditioning, rules & timer",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        // Sub-Tab Strip
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -142,185 +139,261 @@ fun TrainingScreen(
 
         Box(modifier = Modifier.weight(1f)) {
             when (subTab) {
-                TrainingSubTab.MODULES -> {
-                    SkillModulesList(
-                        lessons = viewModel.skillLessons,
-                        selectedCategory = selectedSkillFilter,
-                        completedIds = completedIds,
-                        onSelectCategory = { viewModel.selectSkillFilter(it) },
-                        onOpenLesson = { viewModel.openLesson(it) }
-                    )
+                TrainingSubTab.PROGRAMS -> {
+                    val activeProg = viewModel.programs.find { it.id == selectedProgramId } ?: viewModel.programs.first()
+                    val doneModules = programCompletions
+                        .filter { it.programId == activeProg.id && it.isCompleted }
+                        .map { it.moduleId }
+                        .toSet()
+                    val modules = activeProg.moduleIds.mapNotNull { id ->
+                        viewModel.programExercises.find { it.id == id }
+                    }
+                    val pct = ((doneModules.size.toFloat() / modules.size.coerceAtLeast(1)) * 100).toInt().coerceIn(0, 100)
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        item {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                viewModel.programs.forEach { prog ->
+                                    val sel = prog.id == activeProg.id
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (sel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(44.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { viewModel.selectProgramId(prog.id) }
+                                            .testTag("program_tab_${prog.level.name.lowercase()}")
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                text = prog.level.displayName,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (sel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        item {
+                            SportyCard(modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                                            Text(
+                                                text = activeProg.badge,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                        Text(
+                                            text = "${doneModules.size}/${modules.size} completed ($pct%)",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Text(activeProg.title, style = MaterialTheme.typography.titleLarge)
+                                    Text(activeProg.description, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    LinearProgressIndicator(
+                                        progress = { pct / 100f },
+                                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                        Button(
+                                            onClick = { viewModel.launchExercisesInTimer(modules, activeProg.title) },
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Start Program", fontWeight = FontWeight.Bold)
+                                        }
+                                        if (doneModules.isNotEmpty()) {
+                                            OutlinedButton(
+                                                onClick = { viewModel.resetProgram(activeProg.id) },
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Text("Reset")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        items(modules, key = { it.id }) { ex ->
+                            val isDone = doneModules.contains(ex.id)
+                            SportyCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("program_module_${ex.id}"),
+                                onClick = { viewModel.openExercise(ex) }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    IconButton(
+                                        onClick = { viewModel.toggleProgramModuleCompleted(activeProg.id, ex.id, isDone) }
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isDone) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                            contentDescription = "Toggle module completion",
+                                            tint = if (isDone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(ex.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                        Text(ex.description, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "${ex.durationMinutes} min • ${ex.recommendedReps} • Rest ${ex.restTimeSeconds}s",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                TrainingSubTab.CATEGORIES -> {
+                    var levelFilter by remember { mutableStateOf<SkillLevel?>(null) }
+                    val filtered = viewModel.categoryExercises.filter { ex ->
+                        (selectedCategory == null || ex.categoryKey == selectedCategory!!.name) &&
+                            (levelFilter == null || ex.difficulty == levelFilter)
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    item {
+                                        FilterChipPill("All 9 Categories", selectedCategory == null) {
+                                            viewModel.selectCategoryFilter(null)
+                                        }
+                                    }
+                                    items(TrainingCategory.entries) { cat ->
+                                        FilterChipPill(cat.displayName, selectedCategory == cat) {
+                                            viewModel.selectCategoryFilter(cat)
+                                        }
+                                    }
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    FilterChipPill("All Levels", levelFilter == null) { levelFilter = null }
+                                    SkillLevel.entries.forEach { lvl ->
+                                        FilterChipPill(lvl.displayName, levelFilter == lvl) { levelFilter = lvl }
+                                    }
+                                }
+                            }
+                        }
+
+                        items(filtered, key = { it.id }) { ex ->
+                            ExerciseCardItem(
+                                exercise = ex,
+                                isCompleted = completedIds.contains(ex.id),
+                                onClick = { viewModel.openExercise(ex) }
+                            )
+                        }
+                    }
                 }
 
                 TrainingSubTab.FITNESS -> {
-                    FitnessModulesList(
-                        lessons = viewModel.fitnessLessons,
-                        completedIds = completedIds,
-                        onOpenLesson = { viewModel.openLesson(it) }
-                    )
+                    var areaFilter by remember { mutableStateOf<FitnessArea?>(null) }
+                    val filtered = if (areaFilter == null) viewModel.fitnessExercises
+                    else viewModel.fitnessExercises.filter { it.categoryKey == areaFilter!!.name }
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        item {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                item {
+                                    FilterChipPill("All Fitness (8)", areaFilter == null) { areaFilter = null }
+                                }
+                                items(FitnessArea.entries) { area ->
+                                    FilterChipPill(area.displayName, areaFilter == area) { areaFilter = area }
+                                }
+                            }
+                        }
+
+                        items(filtered, key = { it.id }) { ex ->
+                            ExerciseCardItem(
+                                exercise = ex,
+                                isCompleted = completedIds.contains(ex.id),
+                                onClick = { viewModel.openExercise(ex) }
+                            )
+                        }
+                    }
                 }
 
-                TrainingSubTab.POSITIONS -> {
-                    PositionsModulesList(
-                        lessons = viewModel.positionLessons,
-                        completedIds = completedIds,
-                        onOpenLesson = { viewModel.openLesson(it) }
-                    )
+                TrainingSubTab.RULES -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        item {
+                            SportyCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Text("Badminton Rules & Court Knowledge", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
+                                    Text(
+                                        "Tap any lesson below for official court measurements, scoring, service rules, faults, and racket guidance — 100% offline.",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                        items(viewModel.rulesLessons, key = { it.id }) { lesson ->
+                            ExerciseCardItem(
+                                exercise = lesson,
+                                isCompleted = completedIds.contains(lesson.id),
+                                onClick = { viewModel.openExercise(lesson) }
+                            )
+                        }
+                    }
                 }
 
-                TrainingSubTab.TIMERS -> TimersToolPanel(viewModel = viewModel)
-                TrainingSubTab.PLANNER -> PlannerAndCalendarPanel(viewModel = viewModel)
-                TrainingSubTab.TACTICS -> TacticsBoardPanel(viewModel = viewModel)
+                TrainingSubTab.TIMER -> {
+                    InteractiveTimerPanel(viewModel = viewModel)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SkillModulesList(
-    lessons: List<TrainingLesson>,
-    selectedCategory: SkillCategory?,
-    completedIds: Set<String>,
-    onSelectCategory: (SkillCategory?) -> Unit,
-    onOpenLesson: (TrainingLesson) -> Unit
-) {
-    val filtered = if (selectedCategory == null) lessons else lessons.filter { it.categoryKey == selectedCategory.name }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    FilterPill(
-                        label = "All (30)",
-                        selected = selectedCategory == null,
-                        onClick = { onSelectCategory(null) }
-                    )
-                }
-                items(SkillCategory.entries) { cat ->
-                    FilterPill(
-                        label = cat.displayName,
-                        selected = selectedCategory == cat,
-                        onClick = { onSelectCategory(cat) }
-                    )
-                }
-            }
-        }
-
-        items(filtered, key = { it.id }) { lesson ->
-            LessonListCard(
-                lesson = lesson,
-                isCompleted = completedIds.contains(lesson.id),
-                onClick = { onOpenLesson(lesson) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FitnessModulesList(
-    lessons: List<TrainingLesson>,
-    completedIds: Set<String>,
-    onOpenLesson: (TrainingLesson) -> Unit
-) {
-    var selectedCategory by remember { mutableStateOf<FitnessCategory?>(null) }
-    var selectedLevel by remember { mutableStateOf<DifficultyLevel?>(null) }
-
-    val filtered = lessons.filter { l ->
-        (selectedCategory == null || l.categoryKey == selectedCategory!!.name) &&
-            (selectedLevel == null || l.difficulty == selectedLevel)
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        FilterPill("All Fitness", selectedCategory == null) { selectedCategory = null }
-                    }
-                    items(FitnessCategory.entries) { cat ->
-                        FilterPill(cat.displayName, selectedCategory == cat) { selectedCategory = cat }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterPill("All Levels", selectedLevel == null) { selectedLevel = null }
-                    DifficultyLevel.entries.forEach { lvl ->
-                        FilterPill(lvl.displayName, selectedLevel == lvl) { selectedLevel = lvl }
-                    }
-                }
-            }
-        }
-
-        items(filtered, key = { it.id }) { lesson ->
-            LessonListCard(
-                lesson = lesson,
-                isCompleted = completedIds.contains(lesson.id),
-                onClick = { onOpenLesson(lesson) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun PositionsModulesList(
-    lessons: List<TrainingLesson>,
-    completedIds: Set<String>,
-    onOpenLesson: (TrainingLesson) -> Unit
-) {
-    var selectedPosition by remember { mutableStateOf<PlayerPosition?>(null) }
-    val filtered = if (selectedPosition == null) lessons else lessons.filter { it.categoryKey == selectedPosition!!.name }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    FilterPill("All Positions", selectedPosition == null) { selectedPosition = null }
-                }
-                items(PlayerPosition.entries) { pos ->
-                    FilterPill("${pos.shortCode} • ${pos.displayName}", selectedPosition == pos) {
-                        selectedPosition = pos
-                    }
-                }
-            }
-        }
-
-        if (selectedPosition != null) {
-            item {
-                StadiumCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Text(selectedPosition!!.displayName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
-                        Text(selectedPosition!!.roleSummary, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-            }
-        }
-
-        items(filtered, key = { it.id }) { lesson ->
-            LessonListCard(
-                lesson = lesson,
-                isCompleted = completedIds.contains(lesson.id),
-                onClick = { onOpenLesson(lesson) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilterPill(
+private fun FilterChipPill(
     label: String,
     selected: Boolean,
     onClick: () -> Unit
@@ -345,21 +418,21 @@ private fun FilterPill(
 }
 
 @Composable
-private fun LessonListCard(
-    lesson: TrainingLesson,
+private fun ExerciseCardItem(
+    exercise: BadmintonExercise,
     isCompleted: Boolean,
     onClick: () -> Unit
 ) {
-    val diffColor = when (lesson.difficulty) {
-        DifficultyLevel.BEGINNER -> NeonPitchGreen
-        DifficultyLevel.INTERMEDIATE -> TacticalCyan
-        DifficultyLevel.ADVANCED -> AmberTimer
+    val diffColor = when (exercise.difficulty) {
+        SkillLevel.BEGINNER -> EmeraldSuccess
+        SkillLevel.INTERMEDIATE -> CobaltAccent
+        SkillLevel.ADVANCED -> AmberTimer
     }
 
-    StadiumCard(
+    SportyCard(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("lesson_card_${lesson.id}"),
+            .testTag("exercise_card_${exercise.id}"),
         onClick = onClick
     ) {
         Row(
@@ -369,10 +442,10 @@ private fun LessonListCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
                         Text(
-                            text = lesson.categoryLabel,
+                            text = exercise.categoryLabel,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -381,7 +454,7 @@ private fun LessonListCard(
                     }
                     Surface(shape = RoundedCornerShape(6.dp), color = diffColor.copy(alpha = 0.16f)) {
                         Text(
-                            text = lesson.difficulty.displayName,
+                            text = exercise.difficulty.displayName,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = diffColor,
@@ -389,46 +462,32 @@ private fun LessonListCard(
                         )
                     }
                 }
-
                 Spacer(modifier = Modifier.height(6.dp))
-
-                Text(lesson.title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text(
-                    text = lesson.description,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2
-                )
+                Text(exercise.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(exercise.description, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "${lesson.durationMinutes} min • ${lesson.recommendedReps}",
+                    text = "${exercise.durationMinutes} min • ${exercise.recommendedReps} • Rest ${exercise.restTimeSeconds}s",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
             if (isCompleted) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = "Completed",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(26.dp)
-                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Default.CheckCircle, "Completed", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             }
         }
     }
 }
 
 @Composable
-private fun LessonDetailView(
-    lesson: TrainingLesson,
+private fun ExerciseDetailScreen(
+    exercise: BadmintonExercise,
     isCompletedOnce: Boolean,
     onBack: () -> Unit,
     onMarkCompleted: () -> Unit,
-    onOpenTimer: () -> Unit
+    onStartInTimer: () -> Unit
 ) {
     var justLogged by remember { mutableStateOf(false) }
 
@@ -441,53 +500,50 @@ private fun LessonDetailView(
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack, modifier = Modifier.testTag("lesson_detail_back")) {
+                IconButton(onClick = onBack, modifier = Modifier.testTag("exercise_detail_back")) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(lesson.categoryLabel.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Text(lesson.title, style = MaterialTheme.typography.headlineMedium)
+                    Text(exercise.categoryLabel.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(exercise.name, style = MaterialTheme.typography.headlineMedium)
                 }
             }
         }
 
-        // Illustrated Drill Diagram (Offline Canvas Visual)
+        // Offline Video / Animation Support Card
         item {
-            StadiumCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    DrillDiagramCanvas(diagramType = lesson.diagramType)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Illustrated Drill Blueprint (Offline)",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+            SportyCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Interactive Offline Animation & Court Guide", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    OfflineAnimatedCourtPlayer(
+                        diagramType = exercise.diagramType,
+                        motionPhases = exercise.motionPhases
                     )
                 }
             }
         }
 
-        // Key Specs Row
+        // Specs Card
         item {
-            StadiumCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(lesson.description, style = MaterialTheme.typography.bodyLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        SpecChip(Icons.Default.Schedule, "${lesson.durationMinutes} min")
-                        SpecChip(Icons.Default.Repeat, lesson.difficulty.displayName)
+            SportyCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(exercise.description, style = MaterialTheme.typography.bodyLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        SpecLabel(Icons.Default.Schedule, "${exercise.durationMinutes} min")
+                        SpecLabel(Icons.Default.Repeat, exercise.difficulty.displayName)
+                        SpecLabel(Icons.Default.Timer, "Rest ${exercise.restTimeSeconds}s")
                     }
-                    SpecChip(Icons.Default.Repeat, "Reps: ${lesson.recommendedReps}")
-                    SpecChip(Icons.Default.Build, "Equipment: ${lesson.equipment}")
+                    SpecLabel(Icons.Default.Repeat, "Recommended Reps: ${exercise.recommendedReps}")
                 }
             }
         }
 
-        // Step-by-step Instructions
+        // Instructions
         item {
-            StadiumCard(modifier = Modifier.fillMaxWidth()) {
+            SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Step-by-Step Instructions", style = MaterialTheme.typography.titleLarge)
-                    lesson.instructions.forEachIndexed { idx, step ->
+                    exercise.instructions.forEachIndexed { idx, step ->
                         Row(verticalAlignment = Alignment.Top) {
                             Box(
                                 modifier = Modifier
@@ -496,12 +552,7 @@ private fun LessonDetailView(
                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "${idx + 1}",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
+                                Text("${idx + 1}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(step, fontSize = 13.sp, modifier = Modifier.weight(1f))
@@ -511,59 +562,81 @@ private fun LessonDetailView(
             }
         }
 
-        // Coaching Tips
-        item {
-            StadiumCard(
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Lightbulb, null, tint = GoldTrophy, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Coaching Tips", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    }
-                    lesson.coachingTips.forEach { tip ->
-                        Text("• $tip", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+        // Safety Instructions (for Fitness & Conditioning)
+        if (exercise.safetyInstructions.isNotEmpty()) {
+            item {
+                SportyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = AmberTimer.copy(alpha = 0.12f),
+                    borderColor = AmberTimer.copy(alpha = 0.45f)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.HealthAndSafety, null, tint = AmberTimer, modifier = Modifier.size(19.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Safety Instructions", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AmberTimer)
+                        }
+                        exercise.safetyInstructions.forEach { safe ->
+                            Text("• $safe", fontSize = 13.sp)
+                        }
                     }
                 }
             }
         }
 
-        // Complete & Timer Buttons
+        // Training Tips
+        item {
+            SportyCard(
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lightbulb, null, tint = VictoryGold, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Coach Training Tips", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                    exercise.trainingTips.forEach { tip ->
+                        Text("• $tip", fontSize = 13.sp)
+                    }
+                }
+            }
+        }
+
+        // Actions
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
-                    onClick = {
-                        onMarkCompleted()
-                        justLogged = true
-                    },
+                    onClick = onStartInTimer,
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
-                        .testTag("mark_lesson_completed_button")
+                        .testTag("start_exercise_timer_button")
                 ) {
-                    Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.onPrimary)
+                    Icon(Icons.Default.Timer, null, tint = MaterialTheme.colorScheme.onPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (justLogged) "Session Logged to History!" else if (isCompletedOnce) "Log Session Again" else "Mark as Completed",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                    Text("Start in Interactive Timer", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                 }
 
                 OutlinedButton(
-                    onClick = onOpenTimer,
+                    onClick = {
+                        onMarkCompleted()
+                        justLogged = true
+                    },
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
+                        .testTag("mark_exercise_completed_button")
                 ) {
-                    Icon(Icons.Default.Timer, null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Launch Workout Timer", fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (justLogged) "Saved to Progress!" else if (isCompletedOnce) "Log Session Again" else "Mark Exercise Completed",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -571,10 +644,10 @@ private fun LessonDetailView(
 }
 
 @Composable
-private fun SpecChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+private fun SpecLabel(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.width(5.dp))
         Text(text, fontSize = 12.sp, fontWeight = FontWeight.Medium)
     }
 }

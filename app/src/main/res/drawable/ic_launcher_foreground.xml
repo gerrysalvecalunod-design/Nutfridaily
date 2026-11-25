@@ -3,6 +3,6 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/ic_football_logo"
+        android:drawable="@drawable/img_logo_badminton_pro"
         android:gravity="center" />
 </layer-list>

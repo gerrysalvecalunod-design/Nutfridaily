@@ -2,37 +2,39 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Championship Obsidian, Gold Spotlight & Crimson Palette (compatible with Dashboard #7 background)
-val PitchBlack = Color(0xFF0A0705)
-val StadiumCharcoal = Color(0xFF140D09)
-val TurfDeepGreen = Color(0xFF2B1B11)
-val CardDarkSurface = Color(0xFF160F0B)
-val CardDarkVariant = Color(0xFF241710)
-val BorderDarkGreen = Color(0xFF4F341D)
+// Badminton Pro — Deep Royal Navy, Electric Sky Cyan & Crisp White Palette (matches official logo)
+val ArenaNavyBlack = Color(0xFF040B1A)
+val ArenaDeepNavy = Color(0xFF061B44)
+val ArenaRoyalBlue = Color(0xFF0A3D91)
 
-val SpotlightGold = Color(0xFFFBBF24)
-val AmberGlow = Color(0xFFF59E0B)
-val FlameOrange = Color(0xFFFB923C)
-val JerseyCrimson = Color(0xFFDC2626)
-val CrimsonOpponent = Color(0xFFEF4444)
+val CourtCardSurface = Color(0xFF0B1730)
+val CourtCardVariant = Color(0xFF132447)
+val CourtBorderBlue = Color(0xFF233F73)
 
-// Pitch & Tactical Diagram Greens (used on grass tactical canvas)
-val PitchTurfGreen = Color(0xFF0A2E1A)
-val NeonPitchGreen = Color(0xFF2DFF6A)
-val EmeraldVibrant = Color(0xFF22C55E)
-val ElectricLime = Color(0xFFA3E635)
-val GoldTrophy = Color(0xFFFACC15)
-val TacticalCyan = Color(0xFF38BDF8)
+val ElectricCyanPrimary = Color(0xFF22D3EE)
+val CobaltAccent = Color(0xFF0284C7)
+val SkyBlueHighlight = Color(0xFF38BDF8)
+val CourtCyan = SkyBlueHighlight
+val CourtCyanContainer = Color(0xFF0C3561)
+
+// Semantic Accents
+val EmeraldSuccess = Color(0xFF10B981)
+val VictoryGold = Color(0xFFFACC15)
 val AmberTimer = Color(0xFFF59E0B)
+val AlertCoral = Color(0xFFEF4444)
 
-val TextPrimaryDark = Color(0xFFFFF8EC)
-val TextSecondaryDark = Color(0xFFD1BDA2)
+// BWF Olympic Blue Court Canvas
+val CourtBlueCanvasDark = Color(0xFF072247)
+val CourtBlueCanvasLight = Color(0xFF0D3A73)
 
-// Warm Championship Daylight Theme (Light Mode option in Settings)
-val BackgroundLight = Color(0xFFFDF8F2)
-val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceVariantLight = Color(0xFFF4E6D6)
-val GoldCrimsonPrimary = Color(0xFFB45309)
-val DeepEspressoText = Color(0xFF1F1209)
-val TextSecondaryLight = Color(0xFF6B503D)
+val TextWhitePrimary = Color(0xFFF8FAFC)
+val TextSilverSecondary = Color(0xFF9EB5D6)
 
+// Crisp White & Royal Navy Daylight Theme (Default — seamless with logo)
+val LightCourtBg = Color(0xFFF4F8FF)
+val LightCardSurface = Color(0xFFFFFFFF)
+val LightSurfaceVariant = Color(0xFFE6F0FC)
+val LightBorderBlue = Color(0xFFC2D7F2)
+val LightPrimaryNavy = Color(0xFF0A3D91)
+val LightBlackInk = Color(0xFF071633)
+val LightMutedInk = Color(0xFF445D82)
