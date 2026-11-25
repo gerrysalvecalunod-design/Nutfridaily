@@ -18,12 +18,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Schedule
@@ -33,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,23 +64,25 @@ import com.example.ui.components.SportyCard
 import com.example.ui.components.WeeklyPerformanceChart
 import com.example.ui.theme.AlertCoral
 import com.example.ui.theme.AmberTimer
-import com.example.ui.theme.CobaltAccent
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.VictoryGold
-import com.example.viewmodel.BadmintonViewModel
+import com.example.ui.theme.TrophyGold
+import com.example.ui.theme.TurfAccentTeal
+import com.example.viewmodel.FootballViewModel
 
 @Composable
 fun ProgressScreen(
-    viewModel: BadmintonViewModel,
+    viewModel: FootballViewModel,
     modifier: Modifier = Modifier
 ) {
     val summary by viewModel.dashboardSummary.collectAsStateWithLifecycle()
     val completedSessions by viewModel.completedSessions.collectAsStateWithLifecycle()
     val personalRecords by viewModel.personalRecords.collectAsStateWithLifecycle()
+    val trainingGoals by viewModel.trainingGoals.collectAsStateWithLifecycle()
     val achievements by viewModel.achievements.collectAsStateWithLifecycle()
 
-    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Charts & Skills, 1 = History, 2 = Achievements, 3 = Records
+    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Charts & Skills, 1 = History, 2 = Badges, 3 = Records & Goals
     var showAddRecordDialog by remember { mutableStateOf(false) }
+    var showAddGoalDialog by remember { mutableStateOf(false) }
     var editingRecord by remember { mutableStateOf<PersonalRecordEntity?>(null) }
 
     LazyColumn(
@@ -90,26 +96,24 @@ fun ProgressScreen(
             Column {
                 Text("Progress Tracker", style = MaterialTheme.typography.headlineLarge)
                 Text(
-                    text = "Saved training history, skill improvements, charts & achievements",
+                    text = "Saved training history, skill improvements, achievements & records",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        // Top 3 KPI Summary Cards
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 ProgressKpiCard("Sessions", "${summary.totalSessions}", Icons.Default.CheckCircle, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                ProgressKpiCard("Hours", "${summary.totalHoursFormatted}h", Icons.Default.Schedule, CobaltAccent, Modifier.weight(1f))
+                ProgressKpiCard("Hours", "${summary.totalHoursFormatted}h", Icons.Default.Schedule, TurfAccentTeal, Modifier.weight(1f))
                 ProgressKpiCard("Streak", "${summary.streakDays}d", Icons.Default.LocalFireDepartment, AmberTimer, Modifier.weight(1f))
             }
         }
 
-        // Sub-Tab Switcher
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -142,7 +146,6 @@ fun ProgressScreen(
 
         when (selectedTab) {
             0 -> {
-                // Weekly Performance Bar Chart
                 item {
                     SportyCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -164,7 +167,6 @@ fun ProgressScreen(
                     }
                 }
 
-                // Monthly Performance 28-Day Grid
                 item {
                     SportyCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -174,7 +176,6 @@ fun ProgressScreen(
                     }
                 }
 
-                // Skill Improvements Across 9 Categories
                 item {
                     SportyCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -227,7 +228,7 @@ fun ProgressScreen(
                     item {
                         SportyCard(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "No completed training sessions yet. Complete any drill, program module, or timer workout to permanently record date, duration, drills, and results offline!",
+                                text = "No completed training sessions yet. Finish any drill, program module, or timer workout to save date, duration, drills, and results offline!",
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(18.dp)
@@ -339,7 +340,7 @@ fun ProgressScreen(
                                     .size(42.dp)
                                     .clip(CircleShape)
                                     .background(
-                                        if (ach.unlocked) VictoryGold.copy(alpha = 0.22f)
+                                        if (ach.unlocked) TrophyGold.copy(alpha = 0.22f)
                                         else MaterialTheme.colorScheme.surfaceVariant
                                     ),
                                 contentAlignment = Alignment.Center
@@ -391,7 +392,7 @@ fun ProgressScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.EmojiEvents, null, tint = AmberTimer, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Personal Bests", style = MaterialTheme.typography.titleLarge)
+                            Text("Personal Records", style = MaterialTheme.typography.titleLarge)
                         }
                         TextButton(onClick = { showAddRecordDialog = true }) {
                             Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
@@ -430,6 +431,65 @@ fun ProgressScreen(
                         }
                     }
                 }
+
+                item {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Flag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Custom Training Goals", style = MaterialTheme.typography.titleLarge)
+                        }
+                        TextButton(onClick = { showAddGoalDialog = true }) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("New Goal", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                items(trainingGoals, key = { it.id }) { goal ->
+                    val pct = (goal.currentValue.toFloat() / goal.targetValue.coerceAtLeast(1)).coerceIn(0f, 1f)
+                    SportyCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(goal.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("${goal.category} • ${goal.currentValue}/${goal.targetValue} ${goal.unit}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                IconButton(onClick = { viewModel.deleteTrainingGoal(goal) }) {
+                                    Icon(Icons.Default.DeleteOutline, "Delete goal", tint = AlertCoral, modifier = Modifier.size(18.dp))
+                                }
+                            }
+                            LinearProgressIndicator(
+                                progress = { pct },
+                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                                color = if (goal.isCompleted) EmeraldSuccess else MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(
+                                    onClick = { viewModel.incrementTrainingGoal(goal, 1) },
+                                    modifier = Modifier.height(34.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                                ) {
+                                    Text("+1 ${goal.unit}", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                                OutlinedButton(
+                                    onClick = { viewModel.incrementTrainingGoal(goal, 10) },
+                                    modifier = Modifier.height(34.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                                ) {
+                                    Text("+10", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -443,9 +503,9 @@ fun ProgressScreen(
             title = { Text("New Personal Record", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Metric Name") }, placeholder = { Text("E.g. Plank Hold") }, singleLine = true)
-                    OutlinedTextField(value = value, onValueChange = { value = it }, label = { Text("Value") }, placeholder = { Text("E.g. 95") }, singleLine = true)
-                    OutlinedTextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") }, placeholder = { Text("E.g. sec / hits") }, singleLine = true)
+                    OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Metric Name") }, placeholder = { Text("E.g. Keepy-Uppy Streak") }, singleLine = true)
+                    OutlinedTextField(value = value, onValueChange = { value = it }, label = { Text("Value") }, placeholder = { Text("E.g. 65") }, singleLine = true)
+                    OutlinedTextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") }, placeholder = { Text("E.g. touches / sec") }, singleLine = true)
                 }
             },
             confirmButton = {
@@ -458,6 +518,34 @@ fun ProgressScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showAddRecordDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showAddGoalDialog) {
+        var title by remember { mutableStateOf("") }
+        var target by remember { mutableStateOf("100") }
+        var unit by remember { mutableStateOf("reps") }
+        AlertDialog(
+            onDismissRequest = { showAddGoalDialog = false },
+            title = { Text("Add Training Goal", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Goal Title") }, placeholder = { Text("E.g. Weak-Foot Shots") }, singleLine = true)
+                    OutlinedTextField(value = target, onValueChange = { target = it }, label = { Text("Target") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                    OutlinedTextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    if (title.isNotBlank()) {
+                        viewModel.addTrainingGoal(title, "Football", target.toIntOrNull() ?: 50, unit)
+                        showAddGoalDialog = false
+                    }
+                }) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddGoalDialog = false }) { Text("Cancel") }
             }
         )
     }

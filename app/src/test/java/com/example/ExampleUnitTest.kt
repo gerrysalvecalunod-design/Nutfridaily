@@ -8,9 +8,9 @@ import com.example.data.model.FitnessArea
 import com.example.data.model.ProgramModuleCompletionEntity
 import com.example.data.model.SkillLevel
 import com.example.data.model.TrainingCategory
-import com.example.data.repository.CategoriesAndFitnessCurriculum
-import com.example.data.repository.ProgramsAndRulesCurriculum
-import com.example.viewmodel.BadmintonViewModel
+import com.example.data.repository.ProgramsAndTacticsCurriculum
+import com.example.data.repository.SkillAndFitnessCurriculum
+import com.example.viewmodel.FootballViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -19,13 +19,13 @@ class ExampleUnitTest {
 
     @Test
     fun programsCurriculum_hasBeginnerIntermediateAndAdvancedWithSixModulesEach() {
-        val programs = ProgramsAndRulesCurriculum.programs
+        val programs = ProgramsAndTacticsCurriculum.programs
         assertEquals(3, programs.size)
         assertTrue(programs.any { it.level == SkillLevel.BEGINNER && it.moduleIds.size == 6 })
         assertTrue(programs.any { it.level == SkillLevel.INTERMEDIATE && it.moduleIds.size == 6 })
         assertTrue(programs.any { it.level == SkillLevel.ADVANCED && it.moduleIds.size == 6 })
 
-        val moduleIds = ProgramsAndRulesCurriculum.programExercises.map { it.id }.toSet()
+        val moduleIds = ProgramsAndTacticsCurriculum.programExercises.map { it.id }.toSet()
         programs.forEach { program ->
             program.moduleIds.forEach { modId ->
                 assertTrue("Missing program module $modId", moduleIds.contains(modId))
@@ -34,15 +34,15 @@ class ExampleUnitTest {
     }
 
     @Test
-    fun rulesCurriculum_coversAllSevenBadmintonLessons() {
-        val rules = ProgramsAndRulesCurriculum.rulesLessons
+    fun rulesCurriculum_coversAllSevenFootballLessons() {
+        val rules = ProgramsAndTacticsCurriculum.rulesLessons
         assertEquals(7, rules.size)
         assertTrue(rules.all { it.instructions.isNotEmpty() && it.trainingTips.isNotEmpty() })
     }
 
     @Test
-    fun categoriesCurriculum_coversAllNineTrainingCategories() {
-        val exercises = CategoriesAndFitnessCurriculum.categoryExercises
+    fun categoriesCurriculum_coversAllNineFootballCategories() {
+        val exercises = SkillAndFitnessCurriculum.categoryExercises
         TrainingCategory.entries.forEach { cat ->
             val catExercises = exercises.filter { it.categoryKey == cat.name }
             assertTrue("Category ${cat.name} must have exercises", catExercises.isNotEmpty())
@@ -56,7 +56,7 @@ class ExampleUnitTest {
 
     @Test
     fun fitnessCurriculum_coversAllEightAreasWithSafetyInstructions() {
-        val fitness = CategoriesAndFitnessCurriculum.fitnessExercises
+        val fitness = SkillAndFitnessCurriculum.fitnessExercises
         assertEquals(8, fitness.size)
         FitnessArea.entries.forEach { area ->
             val item = fitness.find { it.categoryKey == area.name }
@@ -67,12 +67,12 @@ class ExampleUnitTest {
 
     @Test
     fun dashboardSummary_computesEmptyAndCompletedMetricsCorrectly() {
-        val empty = BadmintonViewModel.computeSummary(
+        val empty = FootballViewModel.computeSummary(
             sessions = emptyList(),
             progDone = emptyList(),
             currentSettings = AppSettings(),
-            categoryExercises = CategoriesAndFitnessCurriculum.categoryExercises,
-            programs = ProgramsAndRulesCurriculum.programs,
+            categoryExercises = SkillAndFitnessCurriculum.categoryExercises,
+            programs = ProgramsAndTacticsCurriculum.programs,
             achievements = DatabaseInitializer.defaultAchievements()
         )
         assertEquals(0, empty.totalSessions)
@@ -85,32 +85,32 @@ class ExampleUnitTest {
         assertEquals(8, empty.totalAchievementsCount)
 
         val today = DateUtils.todayKey()
-        val footworkEx = CategoriesAndFitnessCurriculum.categoryExercises.first {
-            it.categoryKey == TrainingCategory.FOOTWORK.name
+        val dribbleEx = SkillAndFitnessCurriculum.categoryExercises.first {
+            it.categoryKey == TrainingCategory.DRIBBLING.name
         }
         val completed = listOf(
             CompletedSessionEntity(
-                exerciseId = footworkEx.id,
+                exerciseId = dribbleEx.id,
                 dateKey = today,
-                categoryKey = TrainingCategory.FOOTWORK.name,
-                categoryLabel = TrainingCategory.FOOTWORK.displayName,
-                title = footworkEx.name,
+                categoryKey = TrainingCategory.DRIBBLING.name,
+                categoryLabel = TrainingCategory.DRIBBLING.displayName,
+                title = dribbleEx.name,
                 durationMinutes = 30,
-                drillsSummary = footworkEx.recommendedReps,
+                drillsSummary = dribbleEx.recommendedReps,
                 resultSummary = "Timer Completed • 100%"
             )
         )
         val progDone = listOf(
             ProgramModuleCompletionEntity("prog_beginner", "beg_rules", true, today),
-            ProgramModuleCompletionEntity("prog_beginner", "beg_grip", true, today),
-            ProgramModuleCompletionEntity("prog_beginner", "beg_ready", true, today)
+            ProgramModuleCompletionEntity("prog_beginner", "beg_touch", true, today),
+            ProgramModuleCompletionEntity("prog_beginner", "beg_dribble", true, today)
         )
-        val populated = BadmintonViewModel.computeSummary(
+        val populated = FootballViewModel.computeSummary(
             sessions = completed,
             progDone = progDone,
             currentSettings = AppSettings(dailyMinutesGoal = 30, weeklySessionsGoal = 5, activeProgramId = "prog_beginner"),
-            categoryExercises = CategoriesAndFitnessCurriculum.categoryExercises,
-            programs = ProgramsAndRulesCurriculum.programs,
+            categoryExercises = SkillAndFitnessCurriculum.categoryExercises,
+            programs = ProgramsAndTacticsCurriculum.programs,
             achievements = DatabaseInitializer.defaultAchievements().mapIndexed { idx, a ->
                 if (idx == 0) a.copy(unlocked = true, progressCurrent = 1) else a
             }

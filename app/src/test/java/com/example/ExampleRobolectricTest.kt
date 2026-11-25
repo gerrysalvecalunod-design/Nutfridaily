@@ -3,21 +3,22 @@ package com.example
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.example.data.local.BadmintonDatabase
 import com.example.data.local.DatabaseInitializer
 import com.example.data.local.DateUtils
+import com.example.data.local.FootballDatabase
 import com.example.data.local.SettingsDataStore
 import com.example.data.model.AppSettings
 import com.example.data.model.CompletedSessionEntity
+import com.example.data.model.PlayerPosition
 import com.example.data.model.PlayerProfileEntity
 import com.example.data.model.ProgramModuleCompletionEntity
 import com.example.data.model.SavedTrainingCheckpointEntity
 import com.example.data.model.SkillLevel
 import com.example.data.model.TrainingCategory
-import com.example.data.repository.BadmintonRepository
-import com.example.data.repository.CategoriesAndFitnessCurriculum
-import com.example.data.repository.ProgramsAndRulesCurriculum
-import com.example.viewmodel.BadmintonViewModel
+import com.example.data.repository.FootballRepository
+import com.example.data.repository.ProgramsAndTacticsCurriculum
+import com.example.data.repository.SkillAndFitnessCurriculum
+import com.example.viewmodel.FootballViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -34,76 +35,78 @@ import org.robolectric.annotation.Config
 class ExampleRobolectricTest {
 
     @Test
-    fun `app name matches Badminton Pro`() {
+    fun `app name matches Football Pro`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val appName = context.getString(R.string.app_name)
-        assertEquals("Badminton Pro", appName)
+        assertEquals("Football Pro", appName)
     }
 
     @Test
     fun `offline sqlite persists profile history checkpoint and resets cleanly`() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val db = Room.inMemoryDatabaseBuilder(context, BadmintonDatabase::class.java)
+        val db = Room.inMemoryDatabaseBuilder(context, FootballDatabase::class.java)
             .allowMainThreadQueries()
             .build()
         val settingsStore = SettingsDataStore(context)
-        val repo = BadmintonRepository(db, settingsStore)
+        val repo = FootballRepository(db, settingsStore)
 
         DatabaseInitializer.populateIfEmpty(db)
 
-        // 1. Save player name, skill level, duration, goals automatically
+        // 1. Save player name, skill level, position, duration, goals automatically
         repo.upsertProfile(
             PlayerProfileEntity(
                 id = 1,
-                playerName = "Jordan Reyes",
+                playerName = "Marcus Silva",
                 skillLevel = SkillLevel.INTERMEDIATE.name,
-                trainingGoals = "Master net hairpins and jump smash recovery",
+                playerPosition = PlayerPosition.MIDFIELDER.name,
+                trainingGoals = "Master half-turn scanning and box finishing",
                 preferredDurationMinutes = 45,
                 onboardingCompleted = true
             )
         )
         val savedProfile = repo.getProfileOnce()
         assertNotNull(savedProfile)
-        assertEquals("Jordan Reyes", savedProfile!!.playerName)
+        assertEquals("Marcus Silva", savedProfile!!.playerName)
         assertEquals(SkillLevel.INTERMEDIATE.name, savedProfile.skillLevel)
+        assertEquals(PlayerPosition.MIDFIELDER.name, savedProfile.playerPosition)
         assertEquals(45, savedProfile.preferredDurationMinutes)
         assertTrue(savedProfile.onboardingCompleted)
 
         // 2. Record training history with drills & results
         repo.insertCompletedSession(
             CompletedSessionEntity(
-                exerciseId = "cat_smash_full",
+                exerciseId = "cat_shoot_finesse",
                 dateKey = DateUtils.todayKey(),
-                categoryKey = TrainingCategory.SMASH.name,
-                categoryLabel = "Smash Training",
-                title = "Full-Court Rear Jump Smash",
-                durationMinutes = 25,
-                drillsSummary = "4 sets x 15 smashes",
-                resultSummary = "Timer Completed (180s) • 100%"
+                categoryKey = TrainingCategory.SHOOTING.name,
+                categoryLabel = "Shooting & Finishing",
+                title = "Cut-Inside Whipped Finesse",
+                durationMinutes = 18,
+                drillsSummary = "4 sets x 8 curls",
+                resultSummary = "Timer Completed (90s) • 100%"
             )
         )
         val sessions = repo.completedSessions.first()
         assertEquals(1, sessions.size)
-        assertEquals("4 sets x 15 smashes", sessions.first().drillsSummary)
-        assertEquals("Timer Completed (180s) • 100%", sessions.first().resultSummary)
+        assertEquals("4 sets x 8 curls", sessions.first().drillsSummary)
+        assertEquals("Timer Completed (90s) • 100%", sessions.first().resultSummary)
 
         // 3. Save continue-training checkpoint
         repo.upsertCheckpoint(
             SavedTrainingCheckpointEntity(
                 id = 1,
-                queueIdsSerialized = "fit_warmup,cat_smash_full",
-                customTitle = "Smash Session",
+                queueIdsSerialized = "fit_warmup,cat_shoot_finesse",
+                customTitle = "Finishing Session",
                 currentIndex = 1,
                 phase = "WORK",
-                totalPhaseSeconds = 120,
-                remainingSeconds = 74,
+                totalPhaseSeconds = 90,
+                remainingSeconds = 52,
                 completedInSessionCount = 1,
                 isActive = true
             )
         )
         val checkpoint = repo.getCheckpointOnce()
         assertNotNull(checkpoint)
-        assertEquals(74, checkpoint!!.remainingSeconds)
+        assertEquals(52, checkpoint!!.remainingSeconds)
         assertTrue(checkpoint.isActive)
 
         // 4. Reset all saved information cleanly
@@ -124,35 +127,35 @@ class ExampleRobolectricTest {
         val yesterday = DateUtils.daysAgoKey(1)
         val sessions = listOf(
             CompletedSessionEntity(
-                exerciseId = "cat_foot_6corner",
+                exerciseId = "cat_drib_slalom",
                 dateKey = today,
-                categoryKey = TrainingCategory.FOOTWORK.name,
-                categoryLabel = "Footwork Training",
-                title = "6-Corner Shadow Footwork",
+                categoryKey = TrainingCategory.DRIBBLING.name,
+                categoryLabel = "Dribbling & Mastery",
+                title = "10-Cone Tight Slalom Weave",
                 durationMinutes = 30,
-                drillsSummary = "6 sets",
+                drillsSummary = "6 slalom runs",
                 resultSummary = "Completed"
             ),
             CompletedSessionEntity(
-                exerciseId = "cat_serve_low",
+                exerciseId = "cat_pass_wall",
                 dateKey = yesterday,
-                categoryKey = TrainingCategory.SERVING.name,
-                categoryLabel = "Serving Training",
-                title = "Backhand Low Short Serve",
+                categoryKey = TrainingCategory.PASSING.name,
+                categoryLabel = "Passing & First Touch",
+                title = "Rapid 1-Touch Rebound Wall",
                 durationMinutes = 30,
-                drillsSummary = "4 sets",
+                drillsSummary = "5 sets x 60 sec",
                 resultSummary = "Completed"
             )
         )
         val progDone = listOf(
             ProgramModuleCompletionEntity("prog_beginner", "beg_rules", true, today)
         )
-        val summary = BadmintonViewModel.computeSummary(
+        val summary = FootballViewModel.computeSummary(
             sessions = sessions,
             progDone = progDone,
             currentSettings = AppSettings(),
-            categoryExercises = CategoriesAndFitnessCurriculum.categoryExercises,
-            programs = ProgramsAndRulesCurriculum.programs
+            categoryExercises = SkillAndFitnessCurriculum.categoryExercises,
+            programs = ProgramsAndTacticsCurriculum.programs
         )
         assertEquals(2, summary.totalSessions)
         assertEquals(60, summary.totalMinutes)

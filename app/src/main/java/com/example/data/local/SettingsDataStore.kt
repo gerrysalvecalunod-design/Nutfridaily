@@ -12,8 +12,8 @@ import com.example.data.model.AppSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.badmintonSettingsStore: DataStore<Preferences> by preferencesDataStore(
-    name = "badminton_pro_settings"
+private val Context.footballSettingsStore: DataStore<Preferences> by preferencesDataStore(
+    name = "football_pro_settings"
 )
 
 class SettingsDataStore(private val context: Context) {
@@ -27,7 +27,7 @@ class SettingsDataStore(private val context: Context) {
         val ACTIVE_PROGRAM_ID = stringPreferencesKey("active_program_id")
     }
 
-    val settingsFlow: Flow<AppSettings> = context.badmintonSettingsStore.data.map { prefs ->
+    val settingsFlow: Flow<AppSettings> = context.footballSettingsStore.data.map { prefs ->
         AppSettings(
             isDarkTheme = prefs[Keys.IS_DARK_THEME] ?: false,
             soundEnabled = prefs[Keys.SOUND_ENABLED] ?: true,
@@ -40,34 +40,34 @@ class SettingsDataStore(private val context: Context) {
     }
 
     suspend fun setDarkTheme(enabled: Boolean) {
-        context.badmintonSettingsStore.edit { it[Keys.IS_DARK_THEME] = enabled }
+        context.footballSettingsStore.edit { it[Keys.IS_DARK_THEME] = enabled }
     }
 
     suspend fun setSoundEnabled(enabled: Boolean) {
-        context.badmintonSettingsStore.edit { it[Keys.SOUND_ENABLED] = enabled }
+        context.footballSettingsStore.edit { it[Keys.SOUND_ENABLED] = enabled }
     }
 
     suspend fun setSoundToneIndex(index: Int) {
-        context.badmintonSettingsStore.edit { it[Keys.SOUND_TONE_INDEX] = index.coerceIn(0, 2) }
+        context.footballSettingsStore.edit { it[Keys.SOUND_TONE_INDEX] = index.coerceIn(0, 2) }
     }
 
     suspend fun setPreferredDuration(minutes: Int) {
-        context.badmintonSettingsStore.edit { it[Keys.PREFERRED_DURATION] = minutes.coerceIn(10, 120) }
+        context.footballSettingsStore.edit { it[Keys.PREFERRED_DURATION] = minutes.coerceIn(10, 120) }
     }
 
     suspend fun setDailyMinutesGoal(minutes: Int) {
-        context.badmintonSettingsStore.edit { it[Keys.DAILY_MINUTES_GOAL] = minutes.coerceIn(10, 180) }
+        context.footballSettingsStore.edit { it[Keys.DAILY_MINUTES_GOAL] = minutes.coerceIn(10, 180) }
     }
 
     suspend fun setWeeklySessionsGoal(sessions: Int) {
-        context.badmintonSettingsStore.edit { it[Keys.WEEKLY_SESSIONS_GOAL] = sessions.coerceIn(1, 14) }
+        context.footballSettingsStore.edit { it[Keys.WEEKLY_SESSIONS_GOAL] = sessions.coerceIn(1, 14) }
     }
 
     suspend fun setActiveProgramId(programId: String) {
-        context.badmintonSettingsStore.edit { it[Keys.ACTIVE_PROGRAM_ID] = programId }
+        context.footballSettingsStore.edit { it[Keys.ACTIVE_PROGRAM_ID] = programId }
     }
 
     suspend fun resetAllSettings() {
-        context.badmintonSettingsStore.edit { it.clear() }
+        context.footballSettingsStore.edit { it.clear() }
     }
 }

@@ -4,7 +4,7 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 
 object SoundAndReminderHelper {
-    val soundStyleNames = listOf("Crisp Beep", "Court Whistle", "Soft Chime")
+    val soundStyleNames = listOf("Crisp Beep", "Pitch Whistle", "Soft Chime")
 
     fun playCueBeep(isFinishOrRestEnd: Boolean = false, toneIndex: Int = 0) {
         try {

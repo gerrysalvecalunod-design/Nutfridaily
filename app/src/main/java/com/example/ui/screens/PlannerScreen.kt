@@ -52,15 +52,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.model.BadmintonExercise
+import com.example.data.model.FootballExercise
 import com.example.data.model.LessonSection
 import com.example.ui.components.SportyCard
 import com.example.ui.theme.AlertCoral
-import com.example.viewmodel.BadmintonViewModel
+import com.example.viewmodel.FootballViewModel
 
 @Composable
 fun PlannerScreen(
-    viewModel: BadmintonViewModel,
+    viewModel: FootballViewModel,
     modifier: Modifier = Modifier
 ) {
     val plannedWorkouts by viewModel.plannedWorkouts.collectAsStateWithLifecycle()
@@ -88,7 +88,7 @@ fun PlannerScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Daily Workout Planner", style = MaterialTheme.typography.headlineLarge)
                     Text(
-                        text = "Schedule drills, set durations & track daily completion",
+                        text = "Schedule football drills, set durations & track completion",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -105,7 +105,6 @@ fun PlannerScreen(
             }
         }
 
-        // Day Selector (Mon..Sun)
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -146,7 +145,6 @@ fun PlannerScreen(
             }
         }
 
-        // Day Summary Strip
         item {
             SportyCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -183,7 +181,7 @@ fun PlannerScreen(
                     ) {
                         Text("No workouts planned for $selectedDay", fontWeight = FontWeight.Bold)
                         Text(
-                            text = "Tap + New to create a custom schedule with badminton exercises.",
+                            text = "Tap + New to create a custom schedule with football drills.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -258,7 +256,7 @@ fun PlannerScreen(
         }
         var workoutTitle by remember { mutableStateOf("") }
         var durationInput by remember { mutableStateOf("30") }
-        val pickedExercises = remember { mutableStateListOf<BadmintonExercise>() }
+        val pickedExercises = remember { mutableStateListOf<FootballExercise>() }
 
         AlertDialog(
             onDismissRequest = { showCreateDialog = false },
@@ -269,7 +267,7 @@ fun PlannerScreen(
                         value = workoutTitle,
                         onValueChange = { workoutTitle = it },
                         label = { Text("Workout Title") },
-                        placeholder = { Text("E.g. Smash & Footwork Combo") },
+                        placeholder = { Text("E.g. Cone Dribble & Finishing") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().testTag("planner_title_input")
                     )
@@ -282,7 +280,7 @@ fun PlannerScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "Add Exercises (${pickedExercises.size} selected)",
+                        text = "Add Drills (${pickedExercises.size} selected)",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary

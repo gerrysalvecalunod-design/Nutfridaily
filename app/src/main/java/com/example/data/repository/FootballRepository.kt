@@ -1,26 +1,25 @@
 package com.example.data.repository
 
-import com.example.data.local.BadmintonDatabase
 import com.example.data.local.DatabaseInitializer
+import com.example.data.local.FootballDatabase
 import com.example.data.local.SettingsDataStore
 import com.example.data.model.AchievementEntity
 import com.example.data.model.AppSettings
-import com.example.data.model.BadmintonExercise
-import com.example.data.model.BadmintonProgram
 import com.example.data.model.CompletedSessionEntity
+import com.example.data.model.FootballExercise
+import com.example.data.model.FootballProgram
 import com.example.data.model.PersonalRecordEntity
 import com.example.data.model.PlannedWorkoutEntity
 import com.example.data.model.PlayerProfileEntity
 import com.example.data.model.ProgramModuleCompletionEntity
 import com.example.data.model.SavedTrainingCheckpointEntity
-import com.example.data.model.SkillLevel
 import com.example.data.model.TrainingGoalEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-class BadmintonRepository(
-    private val database: BadmintonDatabase,
+class FootballRepository(
+    private val database: FootballDatabase,
     private val settingsStore: SettingsDataStore
 ) {
     private val profileDao = database.playerProfileDao()
@@ -42,16 +41,16 @@ class BadmintonRepository(
     val savedCheckpoint: Flow<SavedTrainingCheckpointEntity?> = checkpointDao.observeCheckpoint()
     val settingsFlow: Flow<AppSettings> = settingsStore.settingsFlow
 
-    val programs: List<BadmintonProgram> = ProgramsAndRulesCurriculum.programs
-    val programExercises: List<BadmintonExercise> = ProgramsAndRulesCurriculum.programExercises
-    val rulesLessons: List<BadmintonExercise> = ProgramsAndRulesCurriculum.rulesLessons
-    val categoryExercises: List<BadmintonExercise> = CategoriesAndFitnessCurriculum.categoryExercises
-    val fitnessExercises: List<BadmintonExercise> = CategoriesAndFitnessCurriculum.fitnessExercises
+    val programs: List<FootballProgram> = ProgramsAndTacticsCurriculum.programs
+    val programExercises: List<FootballExercise> = ProgramsAndTacticsCurriculum.programExercises
+    val rulesLessons: List<FootballExercise> = ProgramsAndTacticsCurriculum.rulesLessons
+    val categoryExercises: List<FootballExercise> = SkillAndFitnessCurriculum.categoryExercises
+    val fitnessExercises: List<FootballExercise> = SkillAndFitnessCurriculum.fitnessExercises
 
-    val allExercises: List<BadmintonExercise> =
+    val allExercises: List<FootballExercise> =
         programExercises + categoryExercises + fitnessExercises + rulesLessons
 
-    fun findExerciseById(id: String): BadmintonExercise? = allExercises.find { it.id == id }
+    fun findExerciseById(id: String): FootballExercise? = allExercises.find { it.id == id }
 
     suspend fun getProfileOnce(): PlayerProfileEntity? = profileDao.getProfileOnce()
 

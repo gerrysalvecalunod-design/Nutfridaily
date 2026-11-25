@@ -3,25 +3,26 @@ package com.example.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.local.BadmintonDatabase
 import com.example.data.local.DatabaseInitializer
 import com.example.data.local.DateUtils
+import com.example.data.local.FootballDatabase
 import com.example.data.local.SettingsDataStore
 import com.example.data.model.AchievementEntity
 import com.example.data.model.AppSettings
-import com.example.data.model.BadmintonExercise
-import com.example.data.model.BadmintonProgram
 import com.example.data.model.CompletedSessionEntity
+import com.example.data.model.FootballExercise
+import com.example.data.model.FootballProgram
 import com.example.data.model.LessonSection
 import com.example.data.model.PersonalRecordEntity
 import com.example.data.model.PlannedWorkoutEntity
+import com.example.data.model.PlayerPosition
 import com.example.data.model.PlayerProfileEntity
 import com.example.data.model.ProgramModuleCompletionEntity
 import com.example.data.model.SavedTrainingCheckpointEntity
 import com.example.data.model.SkillLevel
 import com.example.data.model.TrainingCategory
 import com.example.data.model.TrainingGoalEntity
-import com.example.data.repository.BadmintonRepository
+import com.example.data.repository.FootballRepository
 import com.example.data.util.SoundAndReminderHelper
 import com.example.ui.screens.AppScreen
 import kotlinx.coroutines.Job
@@ -36,6 +37,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.Calendar
+import java.util.Locale
 
 data class DailyChartPoint(
     val dateKey: String,
@@ -61,7 +64,7 @@ data class DashboardSummary(
     val todayMinutes: Int = 0,
     val dailyMinutesGoal: Int = 30,
     val dailyProgressPercent: Int = 0,
-    val activeProgramTitle: String = "Beginner Training",
+    val activeProgramTitle: String = "Beginner Foundations",
     val activeProgramDone: Int = 0,
     val activeProgramTotal: Int = 6,
     val activeProgramPercent: Int = 0,
@@ -74,9 +77,9 @@ data class DashboardSummary(
 
 enum class TrainingSubTab(val label: String) {
     PROGRAMS("Programs"),
-    CATEGORIES("Categories"),
+    CATEGORIES("Skills (9)"),
     FITNESS("Fitness"),
-    RULES("Rules & Learn"),
+    RULES("Tactics & Rules"),
     TIMER("Timer")
 }
 
@@ -87,25 +90,25 @@ enum class TimerPhase {
 }
 
 data class TrainingTimerUiState(
-    val queue: List<BadmintonExercise> = emptyList(),
+    val queue: List<FootballExercise> = emptyList(),
     val currentIndex: Int = 0,
     val phase: TimerPhase = TimerPhase.WORK,
     val totalPhaseSeconds: Int = 60,
     val remainingSeconds: Int = 60,
     val isRunning: Boolean = false,
     val hasStarted: Boolean = false,
-    val customTitle: String = "Quick Court Timer",
+    val customTitle: String = "Quick Pitch Timer",
     val completedInSessionCount: Int = 0,
     val lastNotificationText: String? = null
 ) {
-    val currentExercise: BadmintonExercise? get() = queue.getOrNull(currentIndex)
+    val currentExercise: FootballExercise? get() = queue.getOrNull(currentIndex)
     val hasNextExercise: Boolean get() = currentIndex + 1 < queue.size
 }
 
-class BadmintonViewModel(application: Application) : AndroidViewModel(application) {
-    private val database = BadmintonDatabase.getDatabase(application)
+class FootballViewModel(application: Application) : AndroidViewModel(application) {
+    private val database = FootballDatabase.getDatabase(application)
     private val settingsStore = SettingsDataStore(application)
-    private val repository = BadmintonRepository(database, settingsStore)
+    private val repository = FootballRepository(database, settingsStore)
     private val profileWriteMutex = Mutex()
 
     private val _currentScreen = MutableStateFlow<AppScreen>(AppScreen.Splash)
@@ -114,8 +117,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     private val _trainingSubTab = MutableStateFlow(TrainingSubTab.PROGRAMS)
     val trainingSubTab: StateFlow<TrainingSubTab> = _trainingSubTab.asStateFlow()
 
-    private val _selectedExercise = MutableStateFlow<BadmintonExercise?>(null)
-    val selectedExercise: StateFlow<BadmintonExercise?> = _selectedExercise.asStateFlow()
+    private val _selectedExercise = MutableStateFlow<FootballExercise?>(null)
+    val selectedExercise: StateFlow<FootballExercise?> = _selectedExercise.asStateFlow()
 
     private val _selectedCategoryFilter = MutableStateFlow<TrainingCategory?>(null)
     val selectedCategoryFilter: StateFlow<TrainingCategory?> = _selectedCategoryFilter.asStateFlow()
@@ -156,12 +159,12 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     val savedCheckpoint: StateFlow<SavedTrainingCheckpointEntity?> = repository.savedCheckpoint
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val programs: List<BadmintonProgram> = repository.programs
-    val programExercises: List<BadmintonExercise> = repository.programExercises
-    val categoryExercises: List<BadmintonExercise> = repository.categoryExercises
-    val fitnessExercises: List<BadmintonExercise> = repository.fitnessExercises
-    val rulesLessons: List<BadmintonExercise> = repository.rulesLessons
-    val allExercises: List<BadmintonExercise> = repository.allExercises
+    val programs: List<FootballProgram> = repository.programs
+    val programExercises: List<FootballExercise> = repository.programExercises
+    val categoryExercises: List<FootballExercise> = repository.categoryExercises
+    val fitnessExercises: List<FootballExercise> = repository.fitnessExercises
+    val rulesLessons: List<FootballExercise> = repository.rulesLessons
+    val allExercises: List<FootballExercise> = repository.allExercises
 
     val dashboardSummary: StateFlow<DashboardSummary> = combine(
         completedSessions,
@@ -217,13 +220,13 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                         hasStarted = true,
                         customTitle = checkpoint.customTitle.ifBlank { restoredQueue[safeIdx].name },
                         completedInSessionCount = checkpoint.completedInSessionCount,
-                        lastNotificationText = "Saved progress restored. Tap Resume to continue!"
+                        lastNotificationText = "Saved pitch progress restored. Tap Resume to continue!"
                     )
                 }
             }
         }
 
-        // Keep achievements automatically evaluated and saved in SQLite whenever sessions or modules change
+        // Automatically evaluate & save achievements in SQLite whenever sessions or modules change
         viewModelScope.launch {
             combine(completedSessions, programCompletions) { sessions, progDone ->
                 sessions to progDone
@@ -238,13 +241,13 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             sessions: List<CompletedSessionEntity>,
             progDone: List<ProgramModuleCompletionEntity>,
             currentSettings: AppSettings,
-            categoryExercises: List<BadmintonExercise>,
-            programs: List<BadmintonProgram>,
+            categoryExercises: List<FootballExercise>,
+            programs: List<FootballProgram>,
             achievements: List<AchievementEntity> = emptyList()
         ): DashboardSummary {
             val today = DateUtils.todayKey()
             val totalMinutes = sessions.sumOf { it.durationMinutes }
-            val hoursFormatted = String.format(java.util.Locale.US, "%.1f", totalMinutes / 60f)
+            val hoursFormatted = String.format(Locale.US, "%.1f", totalMinutes / 60f)
 
             val todayMinutes = sessions.filter { it.dateKey == today }.sumOf { it.durationMinutes }
 
@@ -338,11 +341,14 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         val today = DateUtils.todayKey()
         val totalSessions = sessions.size
         val totalMinutes = sessions.sumOf { it.durationMinutes }
-        val footworkDone = sessions.count {
-            it.categoryKey == TrainingCategory.FOOTWORK.name ||
+        val dribbleDone = sessions.count {
+            it.categoryKey == TrainingCategory.DRIBBLING.name ||
                 it.categoryKey == TrainingCategory.SPEED_AGILITY.name
         }
-        val smashDone = sessions.count { it.categoryKey == TrainingCategory.SMASH.name }
+        val finisherDone = sessions.count {
+            it.categoryKey == TrainingCategory.SHOOTING.name ||
+                it.categoryKey == TrainingCategory.SET_PIECES.name
+        }
 
         val activeDates = sessions.map { it.dateKey }.toSet()
         var streak = 0
@@ -358,13 +364,13 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
 
         val updated = current.map { ach ->
             val progress = when (ach.id) {
-                "ach_first_rally" -> totalSessions.coerceAtMost(1)
-                "ach_hour_court" -> totalMinutes.coerceAtMost(60)
-                "ach_footwork_3" -> footworkDone.coerceAtMost(3)
-                "ach_smash_2" -> smashDone.coerceAtMost(2)
+                "ach_first_kickoff" -> totalSessions.coerceAtMost(1)
+                "ach_hour_pitch" -> totalMinutes.coerceAtMost(60)
+                "ach_dribble_3" -> dribbleDone.coerceAtMost(3)
+                "ach_finisher_2" -> finisherDone.coerceAtMost(2)
                 "ach_streak_3" -> streak.coerceAtMost(3)
                 "ach_streak_7" -> streak.coerceAtMost(7)
-                "ach_program_grad" -> maxProgCompleted.coerceAtMost(6)
+                "ach_academy_grad" -> maxProgCompleted.coerceAtMost(6)
                 "ach_sessions_10" -> totalSessions.coerceAtMost(10)
                 else -> ach.progressCurrent
             }
@@ -424,7 +430,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch { repository.setActiveProgramId(programId) }
     }
 
-    fun openExercise(exercise: BadmintonExercise) {
+    fun openExercise(exercise: FootballExercise) {
         _selectedExercise.value = exercise
     }
 
@@ -433,15 +439,15 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     // Daily Recommendation based on saved player skill level
-    fun recommendedExerciseForToday(): BadmintonExercise {
+    fun recommendedExerciseForToday(): FootballExercise {
         val level = SkillLevel.entries.find { it.name == playerProfile.value?.skillLevel } ?: SkillLevel.BEGINNER
         val pool = allExercises.filter { it.difficulty == level && it.section != LessonSection.RULES }
-        val daySeed = CalendarDayHelper.dayOfYear()
+        val daySeed = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
         return if (pool.isNotEmpty()) pool[daySeed % pool.size] else categoryExercises.first()
     }
 
     // Next incomplete module in active program for Continue Training
-    fun nextProgramModuleToContinue(): Pair<BadmintonProgram, BadmintonExercise>? {
+    fun nextProgramModuleToContinue(): Pair<FootballProgram, FootballExercise>? {
         val activeProg = programs.find { it.id == settings.value.activeProgramId } ?: programs.first()
         val doneIds = programCompletions.value
             .filter { it.programId == activeProg.id && it.isCompleted }
@@ -510,6 +516,21 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun autoUpdatePosition(position: PlayerPosition) {
+        viewModelScope.launch {
+            profileWriteMutex.withLock {
+                val existing = repository.getProfileOnce() ?: PlayerProfileEntity()
+                repository.upsertProfile(
+                    existing.copy(
+                        playerPosition = position.name,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
+                _lastAutoSavedAt.value = System.currentTimeMillis()
+            }
+        }
+    }
+
     fun autoUpdatePreferredDuration(minutes: Int) {
         val clamped = minutes.coerceIn(10, 120)
         viewModelScope.launch {
@@ -546,6 +567,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     fun completeOnboarding(
         name: String,
         skillLevel: SkillLevel,
+        position: PlayerPosition,
         preferredDurationMinutes: Int,
         goalText: String
     ) {
@@ -562,6 +584,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                     existing.copy(
                         playerName = resolvedName,
                         skillLevel = skillLevel.name,
+                        playerPosition = position.name,
                         preferredDurationMinutes = preferredDurationMinutes.coerceIn(10, 120),
                         trainingGoals = goalText.trim().ifBlank { existing.trainingGoals },
                         onboardingCompleted = true,
@@ -580,7 +603,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
 
     // Exercise & Program Logging (automatically records date, duration, drills, and results)
     fun logExerciseCompleted(
-        exercise: BadmintonExercise,
+        exercise: FootballExercise,
         resultSummary: String = "Completed • ${exercise.recommendedReps}"
     ) {
         viewModelScope.launch {
@@ -596,9 +619,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                     resultSummary = resultSummary
                 )
             )
-            if (settings.value.soundEnabled) {
-                SoundAndReminderHelper.playCueBeep(isFinishOrRestEnd = true, toneIndex = settings.value.soundToneIndex)
-            }
+            playCue(isFinish = true)
         }
     }
 
@@ -639,9 +660,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                         resultSummary = "Module Completed (${prog?.level?.displayName ?: "Program"})"
                     )
                 )
-                if (settings.value.soundEnabled) {
-                    SoundAndReminderHelper.playCueBeep(true, settings.value.soundToneIndex)
-                }
+                playCue(isFinish = true)
             } else {
                 repository.deleteCompletedByExerciseId(syncId)
             }
@@ -676,7 +695,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun launchExercisesInTimer(exercises: List<BadmintonExercise>, title: String? = null) {
+    fun launchExercisesInTimer(exercises: List<FootballExercise>, title: String? = null) {
         if (exercises.isEmpty()) return
         pauseTimer()
         val first = exercises.first()
@@ -690,7 +709,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             hasStarted = false,
             customTitle = title ?: first.name,
             completedInSessionCount = 0,
-            lastNotificationText = "Loaded ${exercises.size} exercise(s). Tap Start when ready!"
+            lastNotificationText = "Loaded ${exercises.size} drill(s). Tap Start when ready!"
         )
         _timerState.value = newState
         persistTimerCheckpoint(newState, active = true)
@@ -701,9 +720,9 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun quickStartRecommendedWorkout() {
         val rec = recommendedExerciseForToday()
-        val warmup = fitnessExercises.first() // Warm-up
-        val cooldown = fitnessExercises.last() // Cool-down
-        launchExercisesInTimer(listOf(warmup, rec, cooldown), "Daily Recommended Session")
+        val warmup = fitnessExercises.first()
+        val cooldown = fitnessExercises.last()
+        launchExercisesInTimer(listOf(warmup, rec, cooldown), "Daily Pitch Session")
     }
 
     fun startOrResumeTimer() {
@@ -716,7 +735,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         val updated = active.copy(
             isRunning = true,
             hasStarted = true,
-            lastNotificationText = if (active.phase == TimerPhase.WORK) "Training active — keep form sharp!" else "Rest recovery active..."
+            lastNotificationText = if (active.phase == TimerPhase.WORK) "Training active — keep your tempo sharp!" else "Rest recovery active..."
         )
         _timerState.value = updated
         persistTimerCheckpoint(updated, active = true)
@@ -855,7 +874,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                                 remainingSeconds = restSec,
                                 isRunning = true,
                                 completedInSessionCount = cur.completedInSessionCount + 1,
-                                lastNotificationText = "Work done! Rest ${restSec}s before next drill."
+                                lastNotificationText = "Drill done! Rest ${restSec}s before next drill."
                             )
                             _timerState.value = restState
                             persistTimerCheckpoint(restState, active = true)
@@ -923,7 +942,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         dayOfWeek: String,
         title: String,
         categoryLabel: String,
-        selectedExercises: List<BadmintonExercise>,
+        selectedExercises: List<FootballExercise>,
         durationMinutes: Int
     ) {
         if (title.isBlank() && selectedExercises.isEmpty()) return
@@ -1022,10 +1041,10 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             repository.insertGoal(
                 TrainingGoalEntity(
                     title = title.trim(),
-                    category = category.trim().ifBlank { "Footwork" },
+                    category = category.trim().ifBlank { "Dribbling" },
                     targetValue = targetValue.coerceIn(1, 9999),
                     currentValue = 0,
-                    unit = unit.trim().ifBlank { "sessions" },
+                    unit = unit.trim().ifBlank { "reps" },
                     isCompleted = false,
                     createdDateKey = DateUtils.todayKey()
                 )
@@ -1033,20 +1052,20 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun incrementGoal(goal: TrainingGoalEntity, delta: Int) {
+    fun incrementTrainingGoal(goal: TrainingGoalEntity, delta: Int) {
         viewModelScope.launch {
-            val nextVal = (goal.currentValue + delta).coerceIn(0, goal.targetValue)
-            val done = nextVal >= goal.targetValue
-            repository.updateGoal(goal.copy(currentValue = nextVal, isCompleted = done))
-            if (done && !goal.isCompleted) playCue(isFinish = true)
+            val next = (goal.currentValue + delta).coerceIn(0, goal.targetValue)
+            repository.updateGoal(
+                goal.copy(currentValue = next, isCompleted = next >= goal.targetValue)
+            )
         }
     }
 
-    fun deleteGoal(goal: TrainingGoalEntity) {
+    fun deleteTrainingGoal(goal: TrainingGoalEntity) {
         viewModelScope.launch { repository.deleteGoal(goal) }
     }
 
-    // Settings
+    // Settings & Confirmed Reset
     fun setDarkTheme(enabled: Boolean) {
         viewModelScope.launch { repository.setDarkTheme(enabled) }
     }
@@ -1064,39 +1083,30 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun setDailyMinutesGoal(minutes: Int) {
-        viewModelScope.launch { repository.setDailyMinutesGoal(minutes) }
-    }
-
     fun setWeeklySessionsGoal(sessions: Int) {
-        viewModelScope.launch { repository.setWeeklySessionsGoal(sessions) }
-    }
-
-    fun resetAllTrainingProgress() {
-        pauseTimer()
         viewModelScope.launch {
-            repository.resetAllProgress()
-            _selectedExercise.value = null
-            _selectedProgramId.value = "prog_beginner"
-            val defaultEx = categoryExercises.first()
-            _timerState.value = TrainingTimerUiState(
-                queue = listOf(defaultEx),
-                totalPhaseSeconds = defaultEx.timerWorkSeconds,
-                remainingSeconds = defaultEx.timerWorkSeconds,
-                customTitle = defaultEx.name
-            )
-            _lastAutoSavedAt.value = null
-            _profileResetVersion.value = _profileResetVersion.value + 1
-            _currentScreen.value = AppScreen.Welcome
+            repository.setWeeklySessionsGoal(sessions)
+            _lastAutoSavedAt.value = System.currentTimeMillis()
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
+    fun resetAllTrainingProgress() {
         timerJob?.cancel()
+        viewModelScope.launch {
+            repository.resetAllProgress()
+            _selectedProgramId.value = "prog_beginner"
+            _selectedExercise.value = null
+            _selectedCategoryFilter.value = null
+            _lastAutoSavedAt.value = null
+            val firstEx = categoryExercises.first()
+            _timerState.value = TrainingTimerUiState(
+                queue = listOf(firstEx),
+                totalPhaseSeconds = firstEx.timerWorkSeconds,
+                remainingSeconds = firstEx.timerWorkSeconds,
+                customTitle = firstEx.name
+            )
+            _profileResetVersion.value += 1
+            _currentScreen.value = AppScreen.Welcome
+        }
     }
-}
-
-private object CalendarDayHelper {
-    fun dayOfYear(): Int = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR)
 }

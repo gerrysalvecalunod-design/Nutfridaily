@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">Badminton Pro</string>
-    <string name="app_tagline">TRAIN SMART. PLAY BETTER.</string>
+    <string name="app_name">Football Pro</string>
+    <string name="app_tagline">TRAIN HARD. OWN THE PITCH.</string>
     <string name="nav_home">Home</string>
     <string name="nav_training">Training</string>
     <string name="nav_planner">Planner</string>

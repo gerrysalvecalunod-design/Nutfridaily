@@ -52,23 +52,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.model.BadmintonExercise
 import com.example.data.model.FitnessArea
+import com.example.data.model.FootballExercise
 import com.example.data.model.SkillLevel
 import com.example.data.model.TrainingCategory
-import com.example.ui.components.OfflineAnimatedCourtPlayer
+import com.example.ui.components.OfflineAnimatedPitchPlayer
 import com.example.ui.components.SportyCard
 import com.example.ui.theme.AmberTimer
-import com.example.ui.theme.CobaltAccent
-import com.example.ui.theme.CourtCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.VictoryGold
-import com.example.viewmodel.BadmintonViewModel
+import com.example.ui.theme.TrophyGold
+import com.example.ui.theme.TurfAccentTeal
+import com.example.viewmodel.FootballViewModel
 import com.example.viewmodel.TrainingSubTab
 
 @Composable
 fun TrainingScreen(
-    viewModel: BadmintonViewModel,
+    viewModel: FootballViewModel,
     modifier: Modifier = Modifier
 ) {
     val subTab by viewModel.trainingSubTab.collectAsStateWithLifecycle()
@@ -100,9 +99,9 @@ fun TrainingScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
-            Text("Badminton Training", style = MaterialTheme.typography.headlineLarge)
+            Text("Football Training", style = MaterialTheme.typography.headlineLarge)
             Text(
-                text = "Programs, 9 skill modules, conditioning, rules & timer",
+                text = "Programs, 9 skill modules, fitness, tactics & interactive timer",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -365,9 +364,9 @@ fun TrainingScreen(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
-                                    Text("Badminton Rules & Court Knowledge", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
+                                    Text("Football Laws, Formations & Pitch Guide", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
                                     Text(
-                                        "Tap any lesson below for official court measurements, scoring, service rules, faults, and racket guidance — 100% offline.",
+                                        "Tap any lesson below for official pitch dimensions, offside rules, 4-3-3 & 4-4-2 shapes, positional duties, and boot care — 100% offline.",
                                         fontSize = 12.sp,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -419,13 +418,13 @@ private fun FilterChipPill(
 
 @Composable
 private fun ExerciseCardItem(
-    exercise: BadmintonExercise,
+    exercise: FootballExercise,
     isCompleted: Boolean,
     onClick: () -> Unit
 ) {
     val diffColor = when (exercise.difficulty) {
         SkillLevel.BEGINNER -> EmeraldSuccess
-        SkillLevel.INTERMEDIATE -> CobaltAccent
+        SkillLevel.INTERMEDIATE -> TurfAccentTeal
         SkillLevel.ADVANCED -> AmberTimer
     }
 
@@ -483,7 +482,7 @@ private fun ExerciseCardItem(
 
 @Composable
 private fun ExerciseDetailScreen(
-    exercise: BadmintonExercise,
+    exercise: FootballExercise,
     isCompletedOnce: Boolean,
     onBack: () -> Unit,
     onMarkCompleted: () -> Unit,
@@ -510,12 +509,11 @@ private fun ExerciseDetailScreen(
             }
         }
 
-        // Offline Video / Animation Support Card
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Interactive Offline Animation & Court Guide", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    OfflineAnimatedCourtPlayer(
+                    Text("Interactive Offline Animation & Pitch Guide", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    OfflineAnimatedPitchPlayer(
                         diagramType = exercise.diagramType,
                         motionPhases = exercise.motionPhases
                     )
@@ -523,7 +521,6 @@ private fun ExerciseDetailScreen(
             }
         }
 
-        // Specs Card
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -538,7 +535,6 @@ private fun ExerciseDetailScreen(
             }
         }
 
-        // Instructions
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -562,7 +558,6 @@ private fun ExerciseDetailScreen(
             }
         }
 
-        // Safety Instructions (for Fitness & Conditioning)
         if (exercise.safetyInstructions.isNotEmpty()) {
             item {
                 SportyCard(
@@ -584,7 +579,6 @@ private fun ExerciseDetailScreen(
             }
         }
 
-        // Training Tips
         item {
             SportyCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -592,7 +586,7 @@ private fun ExerciseDetailScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Lightbulb, null, tint = VictoryGold, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Lightbulb, null, tint = TrophyGold, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Coach Training Tips", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
@@ -603,7 +597,6 @@ private fun ExerciseDetailScreen(
             }
         }
 
-        // Actions
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
@@ -634,7 +627,7 @@ private fun ExerciseDetailScreen(
                     Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (justLogged) "Saved to Progress!" else if (isCompletedOnce) "Log Session Again" else "Mark Exercise Completed",
+                        text = if (justLogged) "Saved to Progress!" else if (isCompletedOnce) "Log Session Again" else "Mark Drill Completed",
                         fontWeight = FontWeight.Bold
                     )
                 }

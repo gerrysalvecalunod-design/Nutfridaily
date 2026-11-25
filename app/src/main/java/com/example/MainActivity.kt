@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.SportsTennis
+import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -42,26 +42,26 @@ import com.example.ui.screens.ProgressScreen
 import com.example.ui.screens.SplashScreen
 import com.example.ui.screens.TrainingScreen
 import com.example.ui.screens.WelcomeScreen
-import com.example.ui.theme.BadmintonProTheme
-import com.example.viewmodel.BadmintonViewModel
+import com.example.ui.theme.FootballProTheme
+import com.example.viewmodel.FootballViewModel
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: BadmintonViewModel by viewModels()
+    private val viewModel: FootballViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             val settings by viewModel.settings.collectAsStateWithLifecycle()
-            BadmintonProTheme(darkTheme = settings.isDarkTheme) {
-                BadmintonProApp(viewModel = viewModel)
+            FootballProTheme(darkTheme = settings.isDarkTheme) {
+                FootballProApp(viewModel = viewModel)
             }
         }
     }
 }
 
 @Composable
-fun BadmintonProApp(viewModel: BadmintonViewModel) {
+fun FootballProApp(viewModel: FootballViewModel) {
     val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
 
     val isSecondaryScreen = currentScreen !is AppScreen.Splash &&
@@ -79,7 +79,7 @@ fun BadmintonProApp(viewModel: BadmintonViewModel) {
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomBar) {
-                BadmintonBottomNavigationBar(
+                FootballBottomNavigationBar(
                     currentScreen = currentScreen,
                     onNavigate = { viewModel.navigateTo(it) }
                 )
@@ -105,7 +105,7 @@ fun BadmintonProApp(viewModel: BadmintonViewModel) {
 }
 
 @Composable
-private fun BadmintonBottomNavigationBar(
+private fun FootballBottomNavigationBar(
     currentScreen: AppScreen,
     onNavigate: (AppScreen) -> Unit
 ) {
@@ -138,7 +138,7 @@ private fun BadmintonBottomNavigationBar(
             NavigationBarItem(
                 selected = currentScreen is AppScreen.Training,
                 onClick = { onNavigate(AppScreen.Training) },
-                icon = { Icon(Icons.Default.SportsTennis, contentDescription = "Training") },
+                icon = { Icon(Icons.Default.SportsSoccer, contentDescription = "Training") },
                 label = { Text("Training", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1) },
                 colors = colors,
                 modifier = Modifier.testTag("nav_training")

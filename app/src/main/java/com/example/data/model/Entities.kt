@@ -4,31 +4,39 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 enum class SkillLevel(val displayName: String, val subtitle: String) {
-    BEGINNER("Beginner", "Rules, grips, ready stance & fundamentals"),
-    INTERMEDIATE("Intermediate", "Smashes, drops, clears, net play & defense"),
-    ADVANCED("Advanced", "Jump smashes, deception, combos & tactics")
+    BEGINNER("Beginner", "Ball mastery, clean passing, first touch & pitch rules"),
+    INTERMEDIATE("Intermediate", "1v1 dribbling, driven shots, crossing & pressing"),
+    ADVANCED("Advanced", "Explosive finishing, high-tempo rondos & tactical phases")
+}
+
+enum class PlayerPosition(val displayName: String) {
+    ALL_ROUNDER("All-Rounder"),
+    FORWARD("Forward"),
+    MIDFIELDER("Midfielder"),
+    DEFENDER("Defender"),
+    GOALKEEPER("Goalkeeper")
 }
 
 enum class TrainingCategory(val displayName: String, val subtitle: String) {
-    FOOTWORK("Footwork Training", "6-corner steps, split-step & court recovery"),
-    SMASH("Smash Training", "Power pronation, jump smash & steep angles"),
-    SERVING("Serving Training", "Short backhand, flick & high deep serves"),
-    DEFENSIVE("Defensive Training", "Low blocks, high lifts & flat drive defense"),
-    SPEED_AGILITY("Speed & Agility", "Explosive lunges, chasse & sprint bursts"),
-    ENDURANCE("Endurance Training", "Multi-shuttle stamina & rally conditioning"),
-    ACCURACY("Accuracy Training", "Target cones, line drops & tight net shots"),
-    REACTION_TIME("Reaction Time", "Fast drive exchanges & reflex shadow cues"),
-    MATCH_STRATEGY("Match Strategy", "Singles pressure & doubles rotation tactics")
+    DRIBBLING("Dribbling & Mastery", "Close control, cone slalom & 1v1 feints"),
+    PASSING("Passing & First Touch", "One-touch triangles, wall passes & weight"),
+    SHOOTING("Shooting & Finishing", "Laces drive, curled finesse & box volleys"),
+    DEFENDING("Defending & 1v1", "Jockey stance, angle forcing & recovery runs"),
+    SPEED_AGILITY("Speed & Agility", "Cone cuts, ladder feet & explosive starts"),
+    ENDURANCE("Stamina & Endurance", "Shuttle intervals, box-to-box & recovery pace"),
+    SET_PIECES("Set Pieces & Crossing", "Whipped crosses, free kicks & corner placement"),
+    REACTION_VISION("Reaction & Scanning", "Shoulder checks, color cues & quick switches"),
+    MATCH_TACTICS("Match Tactics", "4-3-3 spacing, pressing triggers & transitions")
 }
 
 enum class FitnessArea(val displayName: String) {
     WARMUP("Warm-up"),
-    STRETCHING("Stretching"),
-    JUMP_ROPE("Jump Rope"),
-    SQUATS("Squats"),
-    LUNGES("Lunges"),
-    PLANKS("Planks"),
-    AGILITY_DRILLS("Agility Drills"),
+    STRETCHING("Mobility"),
+    SPRINTS("Sprint Bursts"),
+    LADDER_AGILITY("Cone & Ladder"),
+    SQUATS("Leg Power"),
+    LUNGES("Split Lunges"),
+    CORE_PLANKS("Core Stability"),
     COOLDOWN("Cool-down")
 }
 
@@ -39,19 +47,19 @@ enum class LessonSection {
     RULES
 }
 
-enum class CourtDiagramType {
-    SIX_CORNER_FOOTWORK,
-    SMASH_TRAJECTORY,
-    SERVE_ZONES,
-    NET_HAIRPIN,
-    DEFENSE_BLOCK,
-    CLEAR_AND_DROP,
-    DOUBLES_ROTATION,
-    COURT_DIMENSIONS,
-    CONDITIONING_AGILITY
+enum class PitchDiagramType {
+    SLALOM_DRIBBLING,
+    FINISHING_ZONES,
+    PASSING_TRIANGLE,
+    DEFENSE_SHADOW,
+    PENALTY_SET_PIECE,
+    AGILITY_LADDER,
+    FORMATION_433,
+    PITCH_DIMENSIONS,
+    GOALKEEPER_ANGLES
 }
 
-data class BadmintonExercise(
+data class FootballExercise(
     val id: String,
     val name: String,
     val section: LessonSection,
@@ -66,16 +74,16 @@ data class BadmintonExercise(
     val restTimeSeconds: Int,
     val trainingTips: List<String>,
     val safetyInstructions: List<String> = emptyList(),
-    val diagramType: CourtDiagramType = CourtDiagramType.SIX_CORNER_FOOTWORK,
+    val diagramType: PitchDiagramType = PitchDiagramType.SLALOM_DRIBBLING,
     val motionPhases: List<String> = listOf(
-        "Ready Stance: Knees bent, racket up",
-        "Split-Step: Push off as opponent strikes",
-        "Execute Stroke: Clean contact in front",
-        "Recover Base: Return to center court"
+        "Scan Pitch: Check space before touch",
+        "First Touch: Cushion ball into stride",
+        "Execute Action: Sharp pass, dribble, or strike",
+        "Recover Shape: Reset athletic stance"
     )
 )
 
-data class BadmintonProgram(
+data class FootballProgram(
     val id: String,
     val level: SkillLevel,
     val title: String,
@@ -88,7 +96,7 @@ data class BadmintonProgram(
 data class AppSettings(
     val isDarkTheme: Boolean = false,
     val soundEnabled: Boolean = true,
-    val soundToneIndex: Int = 0, // 0 = Crisp Beep, 1 = Whistle Cue, 2 = Soft Chime
+    val soundToneIndex: Int = 0, // 0 = Crisp Beep, 1 = Pitch Whistle, 2 = Soft Chime
     val preferredDurationMinutes: Int = 30,
     val dailyMinutesGoal: Int = 30,
     val weeklySessionsGoal: Int = 5,
@@ -100,7 +108,8 @@ data class PlayerProfileEntity(
     @PrimaryKey val id: Int = 1,
     val playerName: String = "",
     val skillLevel: String = SkillLevel.BEGINNER.name,
-    val trainingGoals: String = "Build crisp 6-corner footwork, consistent low serves, and explosive smash power.",
+    val playerPosition: String = PlayerPosition.ALL_ROUNDER.name,
+    val trainingGoals: String = "Sharpen first touch, clean cone dribbling, and clinical box finishing.",
     val preferredDurationMinutes: Int = 30,
     val onboardingCompleted: Boolean = false,
     val updatedAt: Long = System.currentTimeMillis()
@@ -152,7 +161,7 @@ data class PersonalRecordEntity(
 data class TrainingGoalEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
-    val category: String = "Footwork",
+    val category: String = "Dribbling",
     val targetValue: Int = 5,
     val currentValue: Int = 0,
     val unit: String = "sessions",

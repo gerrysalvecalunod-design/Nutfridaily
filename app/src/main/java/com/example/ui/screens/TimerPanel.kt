@@ -47,13 +47,13 @@ import com.example.ui.components.CircularProgressRing
 import com.example.ui.components.SportyCard
 import com.example.ui.theme.AmberTimer
 import com.example.ui.theme.EmeraldSuccess
-import com.example.viewmodel.BadmintonViewModel
+import com.example.viewmodel.FootballViewModel
 import com.example.viewmodel.TimerPhase
 import java.util.Locale
 
 @Composable
 fun InteractiveTimerPanel(
-    viewModel: BadmintonViewModel
+    viewModel: FootballViewModel
 ) {
     val state by viewModel.timerState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -76,7 +76,6 @@ fun InteractiveTimerPanel(
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Active Exercise Header
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -87,7 +86,7 @@ fun InteractiveTimerPanel(
                     ) {
                         Text(
                             text = if (state.queue.isNotEmpty()) {
-                                "EXERCISE ${state.currentIndex + 1} OF ${state.queue.size}"
+                                "DRILL ${state.currentIndex + 1} OF ${state.queue.size}"
                             } else "CUSTOM TIMER",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -135,7 +134,6 @@ fun InteractiveTimerPanel(
             }
         }
 
-        // Main Countdown Ring & Controls
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
@@ -202,7 +200,6 @@ fun InteractiveTimerPanel(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Primary Start / Pause / Resume + Reset + Next Exercise Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -283,7 +280,7 @@ fun InteractiveTimerPanel(
                             Icon(Icons.Default.SkipNext, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(19.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (state.hasNextExercise) "Next Exercise" else "Finish & Log",
+                                text = if (state.hasNextExercise) "Next Drill" else "Finish & Log",
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontSize = 12.sp
@@ -294,7 +291,6 @@ fun InteractiveTimerPanel(
             }
         }
 
-        // Countdown Presets
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

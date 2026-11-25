@@ -1,6 +1,6 @@
 {
-  "name": "Badminton Pro",
-  "description": "100% offline badminton training mobile app with beginner/intermediate/advanced programs, 9 skill categories, interactive training timer, daily workout planner, progress analytics, rules & court lessons, and conditioning.",
+  "name": "Football Pro",
+  "description": "100% offline football training mobile app with beginner/intermediate/advanced programs, 9 skill modules, interactive pitch diagrams, countdown timer, daily workout planner, progress analytics, and automatic local SQLite saving.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

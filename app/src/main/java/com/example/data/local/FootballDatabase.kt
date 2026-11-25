@@ -8,6 +8,7 @@ import com.example.data.model.AchievementEntity
 import com.example.data.model.CompletedSessionEntity
 import com.example.data.model.PersonalRecordEntity
 import com.example.data.model.PlannedWorkoutEntity
+import com.example.data.model.PlayerPosition
 import com.example.data.model.PlayerProfileEntity
 import com.example.data.model.ProgramModuleCompletionEntity
 import com.example.data.model.SavedTrainingCheckpointEntity
@@ -34,7 +35,7 @@ import java.util.Locale
     version = 2,
     exportSchema = false
 )
-abstract class BadmintonDatabase : RoomDatabase() {
+abstract class FootballDatabase : RoomDatabase() {
     abstract fun playerProfileDao(): PlayerProfileDao
     abstract fun completedSessionDao(): CompletedSessionDao
     abstract fun programModuleCompletionDao(): ProgramModuleCompletionDao
@@ -46,14 +47,14 @@ abstract class BadmintonDatabase : RoomDatabase() {
 
     companion object {
         @Volatile
-        private var INSTANCE: BadmintonDatabase? = null
+        private var INSTANCE: FootballDatabase? = null
 
-        fun getDatabase(context: Context): BadmintonDatabase {
+        fun getDatabase(context: Context): FootballDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    BadmintonDatabase::class.java,
-                    "badminton_pro_offline_db"
+                    FootballDatabase::class.java,
+                    "football_pro_offline_db"
                 )
                     .fallbackToDestructiveMigration()
                     .build()
@@ -114,56 +115,56 @@ object DateUtils {
 object DatabaseInitializer {
     fun defaultAchievements(): List<AchievementEntity> = listOf(
         AchievementEntity(
-            id = "ach_first_rally",
-            title = "First Rally",
-            description = "Complete your first offline training session.",
+            id = "ach_first_kickoff",
+            title = "First Kickoff",
+            description = "Complete your first offline football training session.",
             progressTarget = 1
         ),
         AchievementEntity(
-            id = "ach_hour_court",
-            title = "Hour on Court",
-            description = "Log 60 total minutes of badminton training.",
+            id = "ach_hour_pitch",
+            title = "Hour on the Pitch",
+            description = "Log 60 total minutes of football training.",
             progressTarget = 60
         ),
         AchievementEntity(
-            id = "ach_footwork_3",
-            title = "Footwork Specialist",
-            description = "Complete 3 Footwork or Speed drills.",
+            id = "ach_dribble_3",
+            title = "Ball Mastery Pro",
+            description = "Complete 3 Dribbling or Speed & Agility drills.",
             progressTarget = 3
         ),
         AchievementEntity(
-            id = "ach_smash_2",
-            title = "Smash Powerhouse",
-            description = "Complete 2 Smash or Attack drills.",
+            id = "ach_finisher_2",
+            title = "Clinical Finisher",
+            description = "Complete 2 Shooting or Set Piece drills.",
             progressTarget = 2
         ),
         AchievementEntity(
             id = "ach_streak_3",
-            title = "3-Day Streak",
+            title = "Hat-Trick Streak",
             description = "Train 3 consecutive days without missing.",
             progressTarget = 3
         ),
         AchievementEntity(
             id = "ach_streak_7",
-            title = "Weekly Warrior",
+            title = "Matchweek Captain",
             description = "Build a 7-day consecutive training streak.",
             progressTarget = 7
         ),
         AchievementEntity(
-            id = "ach_program_grad",
-            title = "Program Graduate",
+            id = "ach_academy_grad",
+            title = "Academy Graduate",
             description = "Complete all 6 modules in any skill program.",
             progressTarget = 6
         ),
         AchievementEntity(
             id = "ach_sessions_10",
-            title = "Consistency Pro",
-            description = "Complete 10 total training sessions.",
+            title = "Squad Regular",
+            description = "Complete 10 total football sessions offline.",
             progressTarget = 10
         )
     )
 
-    suspend fun populateIfEmpty(database: BadmintonDatabase) {
+    suspend fun populateIfEmpty(database: FootballDatabase) {
         withContext(Dispatchers.IO) {
             val profileDao = database.playerProfileDao()
             val achDao = database.achievementDao()
@@ -181,7 +182,8 @@ object DatabaseInitializer {
                     id = 1,
                     playerName = "",
                     skillLevel = SkillLevel.BEGINNER.name,
-                    trainingGoals = "Master 6-corner footwork, clean backhand serves, and explosive overhead smashes.",
+                    playerPosition = PlayerPosition.ALL_ROUNDER.name,
+                    trainingGoals = "Sharpen first touch, tight cone dribbling, and clinical box finishing.",
                     preferredDurationMinutes = 30,
                     onboardingCompleted = false
                 )
@@ -189,27 +191,27 @@ object DatabaseInitializer {
 
             val recordDao = database.personalRecordDao()
             listOf(
-                PersonalRecordEntity(title = "6-Corner 20 Shuttle Run", valueText = "0.0", unit = "sec", updatedDateKey = today),
-                PersonalRecordEntity(title = "Consecutive Wall Volleys", valueText = "0", unit = "hits", updatedDateKey = today),
-                PersonalRecordEntity(title = "Short Serve Target Accuracy", valueText = "0/20", unit = "hits", updatedDateKey = today)
+                PersonalRecordEntity(title = "Keepy-Uppy Juggling Streak", valueText = "0", unit = "touches", updatedDateKey = today),
+                PersonalRecordEntity(title = "Cone Slalom 10-Gate Time", valueText = "0.0", unit = "sec", updatedDateKey = today),
+                PersonalRecordEntity(title = "40m Sprint Best", valueText = "0.0", unit = "sec", updatedDateKey = today)
             ).forEach { recordDao.insert(it) }
 
             val plannerDao = database.plannedWorkoutDao()
             listOf(
-                PlannedWorkoutEntity(dayOfWeek = "Mon", title = "6-Corner Footwork & Split-Step", categoryLabel = "Footwork Training", exerciseIdsSerialized = "fit_warmup,cat_foot_6corner,cat_foot_split", durationMinutes = 30, isCompleted = false),
-                PlannedWorkoutEntity(dayOfWeek = "Tue", title = "Smash Power & Overhead Mechanics", categoryLabel = "Smash Training", exerciseIdsSerialized = "fit_warmup,cat_smash_full,cat_smash_stick", durationMinutes = 30, isCompleted = false),
-                PlannedWorkoutEntity(dayOfWeek = "Wed", title = "Precision Serving & Net Hairpins", categoryLabel = "Accuracy Training", exerciseIdsSerialized = "cat_serve_low,cat_acc_net,cat_acc_drop", durationMinutes = 25, isCompleted = false),
-                PlannedWorkoutEntity(dayOfWeek = "Thu", title = "Speed, Agility & Jump Conditioning", categoryLabel = "Speed & Agility", exerciseIdsSerialized = "fit_jumprope,fit_agility,fit_lunges", durationMinutes = 30, isCompleted = false),
-                PlannedWorkoutEntity(dayOfWeek = "Fri", title = "Fast Defense & Reaction Drives", categoryLabel = "Defensive Training", exerciseIdsSerialized = "cat_def_block,cat_react_wall,cat_def_lift", durationMinutes = 25, isCompleted = false),
-                PlannedWorkoutEntity(dayOfWeek = "Sat", title = "Multi-Shuttle Endurance & Match Tactics", categoryLabel = "Endurance Training", exerciseIdsSerialized = "cat_end_multi,cat_strat_singles,fit_cooldown", durationMinutes = 40, isCompleted = false),
-                PlannedWorkoutEntity(dayOfWeek = "Sun", title = "Active Recovery, Planks & Stretching", categoryLabel = "Fitness & Conditioning", exerciseIdsSerialized = "fit_stretch,fit_planks,fit_cooldown", durationMinutes = 20, isCompleted = false)
+                PlannedWorkoutEntity(dayOfWeek = "Mon", title = "Ball Mastery & Cone Slalom", categoryLabel = "Dribbling & Mastery", exerciseIdsSerialized = "fit_warmup,cat_drib_slalom,cat_drib_sole", durationMinutes = 30, isCompleted = false),
+                PlannedWorkoutEntity(dayOfWeek = "Tue", title = "One-Touch Passing & First Touch", categoryLabel = "Passing & First Touch", exerciseIdsSerialized = "fit_warmup,cat_pass_wall,cat_pass_cushion", durationMinutes = 30, isCompleted = false),
+                PlannedWorkoutEntity(dayOfWeek = "Wed", title = "Box Finishing & Finesse Shots", categoryLabel = "Shooting & Finishing", exerciseIdsSerialized = "cat_shoot_laces,cat_shoot_finesse,cat_shoot_volley", durationMinutes = 35, isCompleted = false),
+                PlannedWorkoutEntity(dayOfWeek = "Thu", title = "Speed, Cone Cuts & Sprint Power", categoryLabel = "Speed & Agility", exerciseIdsSerialized = "fit_sprints,fit_ladder,fit_squats", durationMinutes = 30, isCompleted = false),
+                PlannedWorkoutEntity(dayOfWeek = "Fri", title = "1v1 Defending & Reaction Scanning", categoryLabel = "Defending & 1v1", exerciseIdsSerialized = "cat_def_jockey,cat_react_scan,cat_def_recovery", durationMinutes = 25, isCompleted = false),
+                PlannedWorkoutEntity(dayOfWeek = "Sat", title = "Match Stamina & 4-3-3 Tactics", categoryLabel = "Stamina & Endurance", exerciseIdsSerialized = "cat_end_shuttle,cat_tact_433,fit_cooldown", durationMinutes = 40, isCompleted = false),
+                PlannedWorkoutEntity(dayOfWeek = "Sun", title = "Active Mobility, Core & Set Pieces", categoryLabel = "Mobility & Core", exerciseIdsSerialized = "fit_stretch,fit_planks,cat_set_freekick", durationMinutes = 25, isCompleted = false)
             ).forEach { plannerDao.insert(it) }
 
             val goalDao = database.trainingGoalDao()
             listOf(
                 TrainingGoalEntity(title = "Complete Beginner Program", category = "Program", targetValue = 6, currentValue = 0, unit = "modules", isCompleted = false, createdDateKey = today),
-                TrainingGoalEntity(title = "500 Shadow Footwork Steps", category = "Footwork", targetValue = 500, currentValue = 0, unit = "steps", isCompleted = false, createdDateKey = today),
-                TrainingGoalEntity(title = "Weekly 5-Day Court Streak", category = "Consistency", targetValue = 5, currentValue = 0, unit = "days", isCompleted = false, createdDateKey = today)
+                TrainingGoalEntity(title = "500 Weak-Foot Wall Passes", category = "Passing", targetValue = 500, currentValue = 0, unit = "passes", isCompleted = false, createdDateKey = today),
+                TrainingGoalEntity(title = "Weekly 5-Day Pitch Streak", category = "Consistency", targetValue = 5, currentValue = 0, unit = "days", isCompleted = false, createdDateKey = today)
             ).forEach { goalDao.insert(it) }
         }
     }

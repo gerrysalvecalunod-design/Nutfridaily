@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -53,16 +55,19 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.data.local.DateUtils
+import com.example.data.model.PlayerPosition
 import com.example.data.model.SkillLevel
 import com.example.data.util.SoundAndReminderHelper
 import com.example.ui.components.SportyCard
 import com.example.ui.theme.AlertCoral
 import com.example.ui.theme.EmeraldSuccess
-import com.example.viewmodel.BadmintonViewModel
+import com.example.ui.theme.StadiumForestDark
+import com.example.viewmodel.FootballViewModel
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileScreen(
-    viewModel: BadmintonViewModel,
+    viewModel: FootballViewModel,
     modifier: Modifier = Modifier
 ) {
     val profile by viewModel.playerProfile.collectAsStateWithLifecycle()
@@ -73,6 +78,7 @@ fun ProfileScreen(
     var initialized by remember(resetVersion) { mutableStateOf(false) }
     var name by remember(resetVersion) { mutableStateOf("") }
     var selectedLevel by remember(resetVersion) { mutableStateOf(SkillLevel.BEGINNER) }
+    var selectedPosition by remember(resetVersion) { mutableStateOf(PlayerPosition.ALL_ROUNDER) }
     var trainingGoals by remember(resetVersion) { mutableStateOf("") }
     var preferredDuration by remember(resetVersion) { mutableIntStateOf(30) }
     var showResetDialog by remember { mutableStateOf(false) }
@@ -82,6 +88,7 @@ fun ProfileScreen(
         if (!initialized) {
             name = p.playerName
             selectedLevel = SkillLevel.entries.find { it.name == p.skillLevel } ?: SkillLevel.BEGINNER
+            selectedPosition = PlayerPosition.entries.find { it.name == p.playerPosition } ?: PlayerPosition.ALL_ROUNDER
             trainingGoals = p.trainingGoals
             preferredDuration = p.preferredDurationMinutes
             initialized = true
@@ -102,17 +109,17 @@ fun ProfileScreen(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = Color.White,
+                    color = StadiumForestDark,
                     shadowElevation = 4.dp,
                     modifier = Modifier.size(52.dp)
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.img_logo_badminton_pro),
-                        contentDescription = "Badminton Pro Logo",
+                        painter = painterResource(id = R.drawable.img_football_app_icon),
+                        contentDescription = "Football Pro Crest",
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(5.dp),
-                        contentScale = ContentScale.Fit
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -199,6 +206,36 @@ fun ProfileScreen(
                                     Text(
                                         text = lvl.displayName,
                                         fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Text("Preferred Position", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        PlayerPosition.entries.forEach { pos ->
+                            val selected = pos == selectedPosition
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .height(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable {
+                                        selectedPosition = pos
+                                        viewModel.autoUpdatePosition(pos)
+                                    }
+                            ) {
+                                Box(modifier = Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = pos.displayName,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                     )
@@ -331,8 +368,8 @@ fun ProfileScreen(
                         Icon(Icons.Default.DarkMode, null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Midnight Navy Dark Mode", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Switch between Crisp White & Deep Navy themes", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Stadium Night Dark Mode", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Switch between Chalk White & Floodlight Turf themes", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
                             checked = settings.isDarkTheme,
@@ -344,13 +381,13 @@ fun ProfileScreen(
             }
         }
 
-        // Reset Training Progress
+        // Reset All Saved Data with Confirmation
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Offline SQLite Storage & Reset", style = MaterialTheme.typography.titleLarge)
                     Text(
-                        text = "Your player name, skill profile, completed workouts, achievements, streaks, and schedules stay saved on your phone across restarts — 100% offline.",
+                        text = "Your player name, position, skill profile, completed drills, achievements, streaks, and schedules stay saved on your phone across restarts — 100% offline.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
