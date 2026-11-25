@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.data.model.AchievementEntity
 import com.example.data.model.CompletedSessionEntity
+import com.example.data.model.DailyPlanItemEntity
 import com.example.data.model.PersonalRecordEntity
 import com.example.data.model.PlannedWorkoutEntity
 import com.example.data.model.PlayerProfileEntity
@@ -41,6 +42,24 @@ interface CompletedSessionDao {
 
     @Query("DELETE FROM completed_sessions WHERE exerciseId = :exerciseId")
     suspend fun deleteByExerciseId(exerciseId: String)
+}
+
+@Dao
+interface DailyPlanDao {
+    @Query("SELECT * FROM daily_plan_items ORDER BY sortOrder ASC")
+    fun observeAll(): Flow<List<DailyPlanItemEntity>>
+
+    @Query("SELECT * FROM daily_plan_items ORDER BY sortOrder ASC")
+    suspend fun getAllOnce(): List<DailyPlanItemEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(items: List<DailyPlanItemEntity>)
+
+    @Update
+    suspend fun update(item: DailyPlanItemEntity)
+
+    @Query("DELETE FROM daily_plan_items")
+    suspend fun clearAll()
 }
 
 @Dao

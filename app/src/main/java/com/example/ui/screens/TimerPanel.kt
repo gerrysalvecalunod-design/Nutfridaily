@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,19 +15,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -53,7 +60,8 @@ import java.util.Locale
 
 @Composable
 fun InteractiveTimerPanel(
-    viewModel: FootballViewModel
+    viewModel: FootballViewModel,
+    showBackHeader: Boolean = true
 ) {
     val state by viewModel.timerState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -67,18 +75,51 @@ fun InteractiveTimerPanel(
         state.remainingSeconds.toFloat() / state.totalPhaseSeconds.toFloat()
     } else 0f
 
+    val queueProgress = if (state.queue.isNotEmpty()) {
+        ((state.currentIndex + if (state.phase == TimerPhase.FINISHED) 1 else 0).toFloat() / state.queue.size.toFloat())
+            .coerceIn(0f, 1f)
+    } else 0f
+
     val mins = state.remainingSeconds / 60
     val secs = state.remainingSeconds % 60
     val currentEx = state.currentExercise
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        if (showBackHeader) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { viewModel.navigateTo(AppScreen.Home) },
+                        modifier = Modifier.testTag("timer_back_button")
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back to Home", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Training Timer", style = MaterialTheme.typography.headlineMedium)
+                        Text(
+                            text = state.customTitle,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
+
+        // Queue progress & sound/vibration quick toggles
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -92,29 +133,50 @@ fun InteractiveTimerPanel(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable { viewModel.setSoundEnabled(!settings.soundEnabled) }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { viewModel.setSoundEnabled(!settings.soundEnabled) }
                             ) {
-                                Icon(
-                                    imageVector = if (settings.soundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                                    contentDescription = "Toggle Sound Cues",
-                                    tint = if (settings.soundEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (settings.soundEnabled) "Sound On" else "Muted",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = if (settings.soundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                                        contentDescription = "Sound Cue Toggle",
+                                        tint = if (settings.soundEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(if (settings.soundEnabled) "Sound" else "Muted", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { viewModel.setVibrationEnabled(!settings.vibrationEnabled) }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Vibration,
+                                        contentDescription = "Vibration Toggle",
+                                        tint = if (settings.vibrationEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(if (settings.vibrationEnabled) "Vibrate" else "Off", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
@@ -125,15 +187,25 @@ fun InteractiveTimerPanel(
                     )
                     if (currentEx != null) {
                         Text(
-                            text = "${currentEx.recommendedReps} • Default Rest ${currentEx.restTimeSeconds}s",
+                            text = "${currentEx.categoryLabel} • ${currentEx.recommendedReps} • Rest ${currentEx.restTimeSeconds}s",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    LinearProgressIndicator(
+                        progress = { queueProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(CircleShape),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 }
             }
         }
 
+        // Main Countdown Ring & Controls
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
@@ -148,7 +220,7 @@ fun InteractiveTimerPanel(
                     ) {
                         Text(
                             text = when (state.phase) {
-                                TimerPhase.WORK -> "TRAINING COUNTDOWN"
+                                TimerPhase.WORK -> "COUNTDOWN TIMER"
                                 TimerPhase.REST -> "REST TIMER"
                                 TimerPhase.FINISHED -> "SESSION COMPLETE"
                             },
@@ -200,6 +272,7 @@ fun InteractiveTimerPanel(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Row 1: Start/Pause/Resume + Reset
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -251,36 +324,54 @@ fun InteractiveTimerPanel(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
+                    // Row 2: Previous Drill + Rest Timer + Next Drill
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        OutlinedButton(
+                            onClick = { viewModel.previousExerciseInTimer() },
+                            enabled = state.hasPreviousExercise,
+                            shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("timer_previous_exercise_button")
+                        ) {
+                            Icon(Icons.Default.SkipPrevious, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text("Prev", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+
                         OutlinedButton(
                             onClick = { viewModel.startRestTimerNow(currentEx?.restTimeSeconds ?: 30) },
                             shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp)
                                 .testTag("timer_rest_button")
                         ) {
-                            Icon(Icons.Default.Timer, null, tint = AmberTimer, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text("Rest Timer", fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.Timer, null, tint = AmberTimer, modifier = Modifier.size(17.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("Rest", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
 
                         Button(
                             onClick = { viewModel.nextExerciseInTimer() },
                             shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(1.15f)
                                 .height(48.dp)
                                 .testTag("timer_next_exercise_button")
                         ) {
-                            Icon(Icons.Default.SkipNext, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(19.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Default.SkipNext, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
                             Text(
-                                text = if (state.hasNextExercise) "Next Drill" else "Finish & Log",
+                                text = if (state.hasNextExercise) "Next Drill" else "Finish",
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontSize = 12.sp
@@ -291,10 +382,37 @@ fun InteractiveTimerPanel(
             }
         }
 
+        // Current Drill Instructions
+        if (currentEx != null) {
+            item {
+                SportyCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Current Drill Instructions", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        currentEx.instructions.forEachIndexed { idx, step ->
+                            Row(verticalAlignment = Alignment.Top) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("${idx + 1}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(step, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Quick Countdown Presets
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Quick Countdown Duration", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("Quick Countdown Presets", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         listOf(30 to "30s", 45 to "45s", 60 to "1m", 90 to "90s", 180 to "3m").forEach { (sec, lbl) ->
                             val active = state.totalPhaseSeconds == sec && state.phase == TimerPhase.WORK

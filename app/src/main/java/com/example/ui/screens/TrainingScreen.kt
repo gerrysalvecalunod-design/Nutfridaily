@@ -99,9 +99,9 @@ fun TrainingScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
-            Text("Football Training", style = MaterialTheme.typography.headlineLarge)
+            Text("Training Library", style = MaterialTheme.typography.headlineLarge)
             Text(
-                text = "Programs, 9 skill modules, fitness, tactics & interactive timer",
+                text = "61 drills across 8 football categories, programs, warm-ups & tactics",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -138,6 +138,94 @@ fun TrainingScreen(
 
         Box(modifier = Modifier.weight(1f)) {
             when (subTab) {
+                TrainingSubTab.CATEGORIES -> {
+                    var levelFilter by remember { mutableStateOf<SkillLevel?>(null) }
+                    val filtered = viewModel.categoryExercises.filter { ex ->
+                        (selectedCategory == null || ex.categoryKey == selectedCategory!!.name) &&
+                            (levelFilter == null || ex.difficulty == levelFilter)
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    item {
+                                        FilterChipPill("All 8 Categories (${viewModel.categoryExercises.size})", selectedCategory == null) {
+                                            viewModel.selectCategoryFilter(null)
+                                        }
+                                    }
+                                    items(TrainingCategory.entries) { cat ->
+                                        val count = viewModel.categoryExercises.count { it.categoryKey == cat.name }
+                                        FilterChipPill("${cat.letter}. ${cat.displayName} ($count)", selectedCategory == cat) {
+                                            viewModel.selectCategoryFilter(cat)
+                                        }
+                                    }
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    FilterChipPill("All Levels", levelFilter == null) { levelFilter = null }
+                                    SkillLevel.entries.forEach { lvl ->
+                                        FilterChipPill(lvl.displayName, levelFilter == lvl) { levelFilter = lvl }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (selectedCategory != null) {
+                            item {
+                                SportyCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(14.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "${selectedCategory!!.letter}. ${selectedCategory!!.displayName}",
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 15.sp,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                            Text(
+                                                text = selectedCategory!!.subtitle,
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Button(
+                                            onClick = {
+                                                viewModel.launchExercisesInTimer(filtered, "${selectedCategory!!.displayName} Session")
+                                            },
+                                            shape = RoundedCornerShape(10.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Run All", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        items(filtered, key = { it.id }) { ex ->
+                            ExerciseCardItem(
+                                exercise = ex,
+                                isCompleted = completedIds.contains(ex.id),
+                                onClick = { viewModel.openExercise(ex) }
+                            )
+                        }
+                    }
+                }
+
                 TrainingSubTab.PROGRAMS -> {
                     val activeProg = viewModel.programs.find { it.id == selectedProgramId } ?: viewModel.programs.first()
                     val doneModules = programCompletions
@@ -276,51 +364,6 @@ fun TrainingScreen(
                     }
                 }
 
-                TrainingSubTab.CATEGORIES -> {
-                    var levelFilter by remember { mutableStateOf<SkillLevel?>(null) }
-                    val filtered = viewModel.categoryExercises.filter { ex ->
-                        (selectedCategory == null || ex.categoryKey == selectedCategory!!.name) &&
-                            (levelFilter == null || ex.difficulty == levelFilter)
-                    }
-
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        item {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    item {
-                                        FilterChipPill("All 9 Categories", selectedCategory == null) {
-                                            viewModel.selectCategoryFilter(null)
-                                        }
-                                    }
-                                    items(TrainingCategory.entries) { cat ->
-                                        FilterChipPill(cat.displayName, selectedCategory == cat) {
-                                            viewModel.selectCategoryFilter(cat)
-                                        }
-                                    }
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    FilterChipPill("All Levels", levelFilter == null) { levelFilter = null }
-                                    SkillLevel.entries.forEach { lvl ->
-                                        FilterChipPill(lvl.displayName, levelFilter == lvl) { levelFilter = lvl }
-                                    }
-                                }
-                            }
-                        }
-
-                        items(filtered, key = { it.id }) { ex ->
-                            ExerciseCardItem(
-                                exercise = ex,
-                                isCompleted = completedIds.contains(ex.id),
-                                onClick = { viewModel.openExercise(ex) }
-                            )
-                        }
-                    }
-                }
-
                 TrainingSubTab.FITNESS -> {
                     var areaFilter by remember { mutableStateOf<FitnessArea?>(null) }
                     val filtered = if (areaFilter == null) viewModel.fitnessExercises
@@ -334,7 +377,7 @@ fun TrainingScreen(
                         item {
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 item {
-                                    FilterChipPill("All Fitness (8)", areaFilter == null) { areaFilter = null }
+                                    FilterChipPill("All Conditioning (${viewModel.fitnessExercises.size})", areaFilter == null) { areaFilter = null }
                                 }
                                 items(FitnessArea.entries) { area ->
                                     FilterChipPill(area.displayName, areaFilter == area) { areaFilter = area }
@@ -382,10 +425,6 @@ fun TrainingScreen(
                         }
                     }
                 }
-
-                TrainingSubTab.TIMER -> {
-                    InteractiveTimerPanel(viewModel = viewModel)
-                }
             }
         }
     }
@@ -399,7 +438,7 @@ private fun FilterChipPill(
 ) {
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .height(36.dp)
             .clip(RoundedCornerShape(10.dp))
@@ -410,7 +449,7 @@ private fun FilterChipPill(
                 text = label,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -512,7 +551,7 @@ private fun ExerciseDetailScreen(
         item {
             SportyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Interactive Offline Animation & Pitch Guide", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("Interactive Pitch Motion Guide", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     OfflineAnimatedPitchPlayer(
                         diagramType = exercise.diagramType,
                         motionPhases = exercise.motionPhases
@@ -530,7 +569,7 @@ private fun ExerciseDetailScreen(
                         SpecLabel(Icons.Default.Repeat, exercise.difficulty.displayName)
                         SpecLabel(Icons.Default.Timer, "Rest ${exercise.restTimeSeconds}s")
                     }
-                    SpecLabel(Icons.Default.Repeat, "Recommended Reps: ${exercise.recommendedReps}")
+                    SpecLabel(Icons.Default.Repeat, "Recommended: ${exercise.recommendedReps}")
                 }
             }
         }
@@ -588,7 +627,7 @@ private fun ExerciseDetailScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Lightbulb, null, tint = TrophyGold, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Coach Training Tips", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Coach Tips", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
                     exercise.trainingTips.forEach { tip ->
                         Text("• $tip", fontSize = 13.sp)
@@ -610,7 +649,7 @@ private fun ExerciseDetailScreen(
                 ) {
                     Icon(Icons.Default.Timer, null, tint = MaterialTheme.colorScheme.onPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Start in Interactive Timer", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                    Text("Start in Training Timer", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                 }
 
                 OutlinedButton(
@@ -627,7 +666,7 @@ private fun ExerciseDetailScreen(
                     Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (justLogged) "Saved to Progress!" else if (isCompletedOnce) "Log Session Again" else "Mark Drill Completed",
+                        text = if (justLogged) "Saved to Training History!" else if (isCompletedOnce) "Log Drill Again" else "Mark Drill Completed",
                         fontWeight = FontWeight.Bold
                     )
                 }

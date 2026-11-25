@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">Football Pro</string>
-    <string name="app_tagline">TRAIN HARD. OWN THE PITCH.</string>
+    <string name="app_name">FOOTBALL PRO</string>
+    <string name="app_tagline">Train Hard. Play Smart. Become Better.</string>
     <string name="nav_home">Home</string>
     <string name="nav_training">Training</string>
-    <string name="nav_planner">Planner</string>
+    <string name="nav_daily_plan">Daily Plan</string>
     <string name="nav_progress">Progress</string>
     <string name="nav_profile">Profile</string>
 </resources>

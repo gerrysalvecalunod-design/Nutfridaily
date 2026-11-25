@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -25,12 +26,15 @@ import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.PauseCircleOutline
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,8 +59,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.FootballExercise
 import com.example.data.model.LessonSection
+import com.example.data.model.PlayerPosition
+import com.example.data.model.SkillLevel
 import com.example.ui.components.SportyCard
 import com.example.ui.theme.AlertCoral
+import com.example.ui.theme.AmberTimer
 import com.example.viewmodel.FootballViewModel
 
 @Composable
@@ -63,10 +71,22 @@ fun PlannerScreen(
     viewModel: FootballViewModel,
     modifier: Modifier = Modifier
 ) {
+    val profile by viewModel.playerProfile.collectAsStateWithLifecycle()
+    val dailyItems by viewModel.dailyPlanItems.collectAsStateWithLifecycle()
     val plannedWorkouts by viewModel.plannedWorkouts.collectAsStateWithLifecycle()
+
+    var activeTab by remember { mutableIntStateOf(0) } // 0 = Today's Personalized Plan, 1 = Weekly Schedule
     val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     var selectedDay by remember { mutableStateOf("Mon") }
     var showCreateDialog by remember { mutableStateOf(false) }
+
+    val drillItems = dailyItems.filter { !it.isRestSlot }
+    val doneCount = drillItems.count { it.isCompleted }
+    val pct = if (drillItems.isNotEmpty()) (doneCount.toFloat() / drillItems.size.toFloat()).coerceIn(0f, 1f) else 0f
+
+    val position = PlayerPosition.entries.find { it.name == profile?.playerPosition } ?: PlayerPosition.STRIKER
+    val skillLevel = SkillLevel.entries.find { it.name == profile?.skillLevel } ?: SkillLevel.BEGINNER
+    val displayName = profile?.playerName?.trim()?.ifBlank { "Player" } ?: "Player"
 
     val dayWorkouts = plannedWorkouts.filter { it.dayOfWeek == selectedDay }
     val totalDayMinutes = dayWorkouts.sumOf { it.durationMinutes }
@@ -86,58 +106,51 @@ fun PlannerScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Daily Workout Planner", style = MaterialTheme.typography.headlineLarge)
+                    Text("Daily Training Plan", style = MaterialTheme.typography.headlineLarge)
                     Text(
-                        text = "Schedule football drills, set durations & track completion",
+                        text = "Personalized for $displayName • ${position.displayName} • ${skillLevel.displayName}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Button(
-                    onClick = { showCreateDialog = true },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.testTag("planner_add_workout_button")
-                ) {
-                    Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("New", fontWeight = FontWeight.Bold)
+                if (activeTab == 1) {
+                    Button(
+                        onClick = { showCreateDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.testTag("planner_add_workout_button")
+                    ) {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("New", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
 
+        // Toggle between Today's Auto-Generated Plan and Weekly Schedule
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                daysOfWeek.forEach { day ->
-                    val count = plannedWorkouts.count { it.dayOfWeek == day }
-                    val done = plannedWorkouts.count { it.dayOfWeek == day && it.isCompleted }
-                    val selected = day == selectedDay
+                listOf("Today's Plan", "Weekly Schedule").forEachIndexed { idx, label ->
+                    val selected = activeTab == idx
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .weight(1f)
+                            .height(42.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { selectedDay = day }
-                            .testTag("planner_day_$day")
+                            .clickable { activeTab = idx }
+                            .testTag("daily_plan_tab_$idx")
                     ) {
-                        Column(
-                            modifier = Modifier.padding(vertical = 10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = day,
-                                fontSize = 12.sp,
+                                text = label,
                                 fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
                                 color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "$done/$count",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -145,103 +158,276 @@ fun PlannerScreen(
             }
         }
 
-        item {
-            SportyCard(
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        if (activeTab == 0) {
+            item {
+                SportyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f)
                 ) {
-                    Column {
-                        Text("$selectedDay Schedule", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Text(
-                            text = "${dayWorkouts.size} workout(s) • $totalDayMinutes min planned • $completedDayCount completed",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${profile?.preferredDurationMinutes ?: 30} Min Session",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "$doneCount/${drillItems.size} Drills Completed",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        LinearProgressIndicator(
+                            progress = { pct },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(CircleShape),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { viewModel.startDailyPlanInTimer(remainingOnly = true) },
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("daily_plan_start_timer_button")
+                            ) {
+                                Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (doneCount in 1 until drillItems.size) "Resume in Timer" else "Start in Timer",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = { viewModel.regenerateDailyPlan() },
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.testTag("daily_plan_regenerate_button")
+                            ) {
+                                Icon(Icons.Default.Refresh, null, modifier = Modifier.size(17.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Refresh", fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        if (dayWorkouts.isEmpty()) {
-            item {
-                SportyCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(
+            items(dailyItems, key = { it.id }) { item ->
+                if (item.isRestSlot) {
+                    SportyCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = AmberTimer.copy(alpha = 0.12f),
+                        borderColor = AmberTimer.copy(alpha = 0.45f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.PauseCircleOutline, "Rest Interval", tint = AmberTimer, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AmberTimer)
+                                Text(item.focusNote, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                } else {
+                    SportyCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .testTag("daily_plan_item_${item.id}"),
+                        onClick = {
+                            val ex = viewModel.allExercises.find { it.id == item.exerciseId }
+                            if (ex != null) viewModel.openExercise(ex)
+                        }
                     ) {
-                        Text("No workouts planned for $selectedDay", fontWeight = FontWeight.Bold)
-                        Text(
-                            text = "Tap + New to create a custom schedule with football drills.",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        OutlinedButton(onClick = { showCreateDialog = true }) {
-                            Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Create $selectedDay Workout")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = { viewModel.toggleDailyPlanItemCompleted(item) },
+                                modifier = Modifier.testTag("daily_plan_check_${item.id}")
+                            ) {
+                                Icon(
+                                    imageVector = if (item.isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                    contentDescription = "Complete drill",
+                                    tint = if (item.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "${item.sectionLabel.uppercase()} • ${item.categoryLabel}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(item.title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(item.focusNote, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                                Text(
+                                    text = "${item.durationSeconds}s",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
         } else {
-            items(dayWorkouts, key = { it.id }) { workout ->
-                SportyCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("planner_workout_card_${workout.id}")
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                    daysOfWeek.forEach { day ->
+                        val count = plannedWorkouts.count { it.dayOfWeek == day }
+                        val done = plannedWorkouts.count { it.dayOfWeek == day && it.isCompleted }
+                        val selected = day == selectedDay
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { selectedDay = day }
+                                .testTag("planner_day_$day")
                         ) {
-                            IconButton(
-                                onClick = { viewModel.togglePlannedWorkoutCompleted(workout) }
+                            Column(
+                                modifier = Modifier.padding(vertical = 10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Icon(
-                                    imageVector = if (workout.isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                                    contentDescription = "Mark workout completed",
-                                    tint = if (workout.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(workout.title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Text(
-                                    text = "${workout.categoryLabel} • ${workout.durationMinutes} min",
+                                    text = day,
                                     fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                 )
-                            }
-                            IconButton(onClick = { viewModel.deletePlannedWorkout(workout) }) {
-                                Icon(Icons.Default.DeleteOutline, "Remove workout", tint = AlertCoral)
+                                Text(
+                                    text = "$done/$count",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
+                    }
+                }
+            }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
+            item {
+                SportyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("$selectedDay Schedule", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text(
+                                text = "${dayWorkouts.size} workout(s) • $totalDayMinutes min planned • $completedDayCount completed",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (dayWorkouts.isEmpty()) {
+                item {
+                    SportyCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedButton(
-                                onClick = { viewModel.startPlannedWorkoutInTimer(workout) },
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.height(36.dp)
-                            ) {
-                                Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(16.dp))
+                            Text("No workouts planned for $selectedDay", fontWeight = FontWeight.Bold)
+                            OutlinedButton(onClick = { showCreateDialog = true }) {
+                                Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Run in Timer", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("Create $selectedDay Workout")
+                            }
+                        }
+                    }
+                }
+            } else {
+                items(dayWorkouts, key = { it.id }) { workout ->
+                    SportyCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("planner_workout_card_${workout.id}")
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = { viewModel.togglePlannedWorkoutCompleted(workout) }
+                                ) {
+                                    Icon(
+                                        imageVector = if (workout.isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                        contentDescription = "Mark workout completed",
+                                        tint = if (workout.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(workout.title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text(
+                                        text = "${workout.categoryLabel} • ${workout.durationMinutes} min",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                IconButton(onClick = { viewModel.deletePlannedWorkout(workout) }) {
+                                    Icon(Icons.Default.DeleteOutline, "Remove workout", tint = AlertCoral)
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                OutlinedButton(
+                                    onClick = { viewModel.startPlannedWorkoutInTimer(workout) },
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.height(36.dp)
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Run in Timer", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
@@ -267,7 +453,7 @@ fun PlannerScreen(
                         value = workoutTitle,
                         onValueChange = { workoutTitle = it },
                         label = { Text("Workout Title") },
-                        placeholder = { Text("E.g. Cone Dribble & Finishing") },
+                        placeholder = { Text("E.g. Ball Mastery & Finishing") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().testTag("planner_title_input")
                     )

@@ -4,29 +4,33 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 enum class SkillLevel(val displayName: String, val subtitle: String) {
-    BEGINNER("Beginner", "Ball mastery, clean passing, first touch & pitch rules"),
+    BEGINNER("Beginner", "Ball mastery, clean passing, first touch & pitch basics"),
     INTERMEDIATE("Intermediate", "1v1 dribbling, driven shots, crossing & pressing"),
     ADVANCED("Advanced", "Explosive finishing, high-tempo rondos & tactical phases")
 }
 
 enum class PlayerPosition(val displayName: String) {
-    ALL_ROUNDER("All-Rounder"),
-    FORWARD("Forward"),
-    MIDFIELDER("Midfielder"),
+    STRIKER("Striker"),
+    LEFT_WINGER("Left Winger"),
+    RIGHT_WINGER("Right Winger"),
+    CENTRAL_MIDFIELDER("Central Midfielder"),
+    DEFENSIVE_MIDFIELDER("Defensive Midfielder"),
+    ATTACKING_MIDFIELDER("Attacking Midfielder"),
     DEFENDER("Defender"),
+    FULLBACK("Fullback"),
+    CENTER_BACK("Center Back"),
     GOALKEEPER("Goalkeeper")
 }
 
-enum class TrainingCategory(val displayName: String, val subtitle: String) {
-    DRIBBLING("Dribbling & Mastery", "Close control, cone slalom & 1v1 feints"),
-    PASSING("Passing & First Touch", "One-touch triangles, wall passes & weight"),
-    SHOOTING("Shooting & Finishing", "Laces drive, curled finesse & box volleys"),
-    DEFENDING("Defending & 1v1", "Jockey stance, angle forcing & recovery runs"),
-    SPEED_AGILITY("Speed & Agility", "Cone cuts, ladder feet & explosive starts"),
-    ENDURANCE("Stamina & Endurance", "Shuttle intervals, box-to-box & recovery pace"),
-    SET_PIECES("Set Pieces & Crossing", "Whipped crosses, free kicks & corner placement"),
-    REACTION_VISION("Reaction & Scanning", "Shoulder checks, color cues & quick switches"),
-    MATCH_TACTICS("Match Tactics", "4-3-3 spacing, pressing triggers & transitions")
+enum class TrainingCategory(val letter: String, val displayName: String, val subtitle: String) {
+    BALL_MASTERY("A", "Ball Mastery", "Toe taps, foundations, sole rolls & tight ball feel"),
+    DRIBBLING("B", "Dribbling", "Cone slalom, 1v1 beats, zigzag & skill moves"),
+    PASSING("C", "Passing", "Short, wall, 1-touch, 2-touch & long accuracy"),
+    SHOOTING("D", "Shooting", "Power, finesse, instep, volleys & penalties"),
+    SPEED_AGILITY("E", "Speed & Agility", "10m/20m sprints, shuttles, ladder & reactions"),
+    PHYSICAL_CONDITIONING("F", "Physical Conditioning", "Endurance, core, leg strength, squats & planks"),
+    DEFENDING("G", "Defending", "Footwork, 1v1 jockey, interception & recovery"),
+    GOALKEEPER("H", "Goalkeeper Training", "Reactions, catching, diving, distribution & handling")
 }
 
 enum class FitnessArea(val displayName: String) {
@@ -94,9 +98,12 @@ data class FootballProgram(
 )
 
 data class AppSettings(
-    val isDarkTheme: Boolean = false,
+    val isDarkTheme: Boolean = true,
     val soundEnabled: Boolean = true,
     val soundToneIndex: Int = 0, // 0 = Crisp Beep, 1 = Pitch Whistle, 2 = Soft Chime
+    val vibrationEnabled: Boolean = true,
+    val remindersEnabled: Boolean = false,
+    val reminderTimeText: String = "07:00",
     val preferredDurationMinutes: Int = 30,
     val dailyMinutesGoal: Int = 30,
     val weeklySessionsGoal: Int = 5,
@@ -107,9 +114,10 @@ data class AppSettings(
 data class PlayerProfileEntity(
     @PrimaryKey val id: Int = 1,
     val playerName: String = "",
+    val age: Int = 18,
     val skillLevel: String = SkillLevel.BEGINNER.name,
-    val playerPosition: String = PlayerPosition.ALL_ROUNDER.name,
-    val trainingGoals: String = "Sharpen first touch, clean cone dribbling, and clinical box finishing.",
+    val playerPosition: String = PlayerPosition.STRIKER.name,
+    val trainingGoals: String = "Sharpen ball mastery, first touch, and clinical finishing.",
     val preferredDurationMinutes: Int = 30,
     val onboardingCompleted: Boolean = false,
     val updatedAt: Long = System.currentTimeMillis()
@@ -124,9 +132,25 @@ data class CompletedSessionEntity(
     val categoryLabel: String,
     val title: String,
     val durationMinutes: Int,
+    val completedDrillsCount: Int = 1,
     val drillsSummary: String = "",
     val resultSummary: String = "Completed",
     val timestamp: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "daily_plan_items")
+data class DailyPlanItemEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val planDateKey: String,
+    val sortOrder: Int,
+    val sectionLabel: String, // "Warm-up", "Main Drill", "Rest Interval", "Cool-down"
+    val exerciseId: String,
+    val title: String,
+    val categoryLabel: String,
+    val durationSeconds: Int,
+    val isRestSlot: Boolean = false,
+    val isCompleted: Boolean = false,
+    val focusNote: String = ""
 )
 
 @Entity(tableName = "program_module_completions", primaryKeys = ["programId", "moduleId"])
@@ -161,7 +185,7 @@ data class PersonalRecordEntity(
 data class TrainingGoalEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
-    val category: String = "Dribbling",
+    val category: String = "Ball Mastery",
     val targetValue: Int = 5,
     val currentValue: Int = 0,
     val unit: String = "sessions",

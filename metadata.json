@@ -1,6 +1,6 @@
 {
-  "name": "Football Pro",
-  "description": "100% offline football training mobile app with beginner/intermediate/advanced programs, 9 skill modules, interactive pitch diagrams, countdown timer, daily workout planner, progress analytics, and automatic local SQLite saving.",
+  "name": "FOOTBALL PRO",
+  "description": "100% offline football training mobile app with custom logo, Ronaldo dashboard backdrop, 61 drills across 8 skill categories, personalized daily training plans, countdown/rest timer with sound & vibration, progress analytics, 9 achievements, and automatic SQLite persistence.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

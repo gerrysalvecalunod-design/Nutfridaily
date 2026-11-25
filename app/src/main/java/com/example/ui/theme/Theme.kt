@@ -13,13 +13,13 @@ import androidx.core.view.WindowCompat
 
 private val FootballDarkColorScheme = darkColorScheme(
     primary = MintEmeraldPrimary,
-    onPrimary = StadiumDeepBlack,
+    onPrimary = Color(0xFF021409),
     primaryContainer = PitchMintContainer,
-    onPrimaryContainer = Color(0xFFA7F3D0),
+    onPrimaryContainer = PitchMintHighlight,
     secondary = PitchMintHighlight,
-    onSecondary = StadiumDeepBlack,
-    secondaryContainer = Color(0xFF113829),
-    onSecondaryContainer = Color(0xFFD1FAE5),
+    onSecondary = Color(0xFF021409),
+    secondaryContainer = Color(0xFF103320),
+    onSecondaryContainer = Color(0xFFB9FCD1),
     tertiary = AmberTimer,
     background = StadiumDeepBlack,
     onBackground = TextWhitePrimary,
@@ -35,7 +35,7 @@ private val FootballLightColorScheme = lightColorScheme(
     primary = LightPrimaryEmerald,
     onPrimary = Color.White,
     primaryContainer = Color(0xFFD1FAE5),
-    onPrimaryContainer = StadiumForestDark,
+    onPrimaryContainer = Color(0xFF043A1C),
     secondary = TurfAccentTeal,
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFCCFBF1),
@@ -53,7 +53,7 @@ private val FootballLightColorScheme = lightColorScheme(
 
 @Composable
 fun FootballProTheme(
-    darkTheme: Boolean = false,
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) FootballDarkColorScheme else FootballLightColorScheme
@@ -63,6 +63,7 @@ fun FootballProTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
+                @Suppress("DEPRECATION")
                 window.statusBarColor = colorScheme.background.toArgb()
                 WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             }

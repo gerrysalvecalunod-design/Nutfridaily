@@ -1,841 +1,593 @@
 package com.example.data.repository
 
-import com.example.data.model.FitnessArea
 import com.example.data.model.FootballExercise
 import com.example.data.model.LessonSection
 import com.example.data.model.PitchDiagramType
 import com.example.data.model.SkillLevel
 import com.example.data.model.TrainingCategory
 
+internal fun drill(
+    id: String,
+    name: String,
+    category: TrainingCategory,
+    description: String,
+    instructions: List<String>,
+    durationMinutes: Int,
+    timerWorkSeconds: Int,
+    difficulty: SkillLevel,
+    recommendedReps: String,
+    restTimeSeconds: Int,
+    tips: List<String>,
+    safety: List<String> = emptyList(),
+    diagramType: PitchDiagramType
+): FootballExercise = FootballExercise(
+    id = id,
+    name = name,
+    section = LessonSection.CATEGORY,
+    categoryKey = category.name,
+    categoryLabel = category.displayName,
+    description = description,
+    instructions = instructions,
+    durationMinutes = durationMinutes,
+    timerWorkSeconds = timerWorkSeconds,
+    difficulty = difficulty,
+    recommendedReps = recommendedReps,
+    restTimeSeconds = restTimeSeconds,
+    trainingTips = tips,
+    safetyInstructions = safety,
+    diagramType = diagramType
+)
+
 object SkillAndFitnessCurriculum {
 
-    val categoryExercises: List<FootballExercise> = listOf(
-        // 1. DRIBBLING & BALL MASTERY (3)
-        FootballExercise(
-            id = "cat_drib_slalom",
-            name = "10-Cone Tight Slalom Weave",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.DRIBBLING.name,
-            categoryLabel = TrainingCategory.DRIBBLING.displayName,
-            description = "Rapid inside-outside foot weaving through narrow cones without breaking stride.",
+    // Categories A (8), B (7), C (7), D (8) = 30 technical drills
+    val attackAndBallExercises: List<FootballExercise> = listOf(
+        // A. Ball Mastery (8)
+        drill(
+            id = "bm_toe_taps",
+            name = "Toe Taps",
+            category = TrainingCategory.BALL_MASTERY,
+            description = "Alternating rapid sole taps on top of the ball to build ankle speed and rhythm.",
             instructions = listOf(
-                "Set 10 cones in a line spaced 1 meter apart.",
-                "Weave cleanly using inside and outside touches of your dominant foot, then weak foot.",
-                "Sprint 5 meters beyond the final cone with controlled acceleration."
-            ),
-            durationMinutes = 15,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "6 slalom runs",
-            restTimeSeconds = 25,
-            trainingTips = listOf(
-                "Keep your hips low and take one touch per step.",
-                "Look slightly ahead of the ball, not straight down at your laces."
-            ),
-            diagramType = PitchDiagramType.SLALOM_DRIBBLING
-        ),
-        FootballExercise(
-            id = "cat_drib_sole",
-            name = "V-Pull, Roll & L-Turn Mastery",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.DRIBBLING.name,
-            categoryLabel = TrainingCategory.DRIBBLING.displayName,
-            description = "Master tight-space sole rolls, V-cuts, and L-turns behind the standing leg.",
-            instructions = listOf(
-                "Pull the ball back with your sole and push it diagonally forward with your instep (V-cut).",
-                "Alternate left and right foot for 45 seconds nonstop.",
-                "Finish with 10 behind-the-leg L-turns in a 2m x 2m box."
-            ),
-            durationMinutes = 15,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "4 sets x 60 sec",
-            restTimeSeconds = 25,
-            trainingTips = listOf(
-                "Hop lightly on your standing foot as you pull with your sole.",
-                "Protect the ball with your upper body every time you turn."
-            ),
-            diagramType = PitchDiagramType.SLALOM_DRIBBLING
-        ),
-        FootballExercise(
-            id = "cat_drib_feint",
-            name = "1v1 La Croqueta & Elastico Attack",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.DRIBBLING.name,
-            categoryLabel = TrainingCategory.DRIBBLING.displayName,
-            description = "Beat tight defenders using rapid double-touch glides and shoulder feints.",
-            instructions = listOf(
-                "Approach a cone defender squarely at medium speed.",
-                "Shift the ball sideways from inside-right to inside-left in one crisp motion (La Croqueta).",
-                "Accelerate past the cone and repeat with an outside-inside Elastico."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 75,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "4 sets x 10 beats",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Keep the ball glued to your feet during the lateral shift.",
-                "Explode out of the skill with 3 quick acceleration strides."
-            ),
-            diagramType = PitchDiagramType.SLALOM_DRIBBLING
-        ),
-
-        // 2. PASSING & FIRST TOUCH (3)
-        FootballExercise(
-            id = "cat_pass_wall",
-            name = "Rapid 1-Touch Rebound Wall",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.PASSING.name,
-            categoryLabel = TrainingCategory.PASSING.displayName,
-            description = "Develop automatic rhythm and clean ankle lock with alternating 1-touch passes.",
-            instructions = listOf(
-                "Stand 4 meters from a flat wall and strike cleanly with the inside of your right foot.",
-                "Return the rebound immediately with your left foot without trapping.",
-                "Build up to 40 consecutive clean 1-touch passes without losing rhythm."
-            ),
-            durationMinutes = 15,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "5 sets x 60 sec",
-            restTimeSeconds = 25,
-            trainingTips = listOf(
-                "Stay light on your toes between every strike.",
-                "Strike the horizontal middle of the ball so rebounds stay smooth."
-            ),
-            diagramType = PitchDiagramType.PASSING_TRIANGLE
-        ),
-        FootballExercise(
-            id = "cat_pass_cushion",
-            name = "Aerial Drop & Soft Cushion Control",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.PASSING.name,
-            categoryLabel = TrainingCategory.PASSING.displayName,
-            description = "Kill high lofted balls dead on your instep, thigh, or chest into space.",
-            instructions = listOf(
-                "Toss the ball 4–5 meters high above your head.",
-                "Meet the falling ball with a relaxed instep, withdrawing your foot downward on contact.",
-                "Kill the bounce within 1 meter, then immediately play a crisp ground pass."
-            ),
-            durationMinutes = 16,
-            timerWorkSeconds = 75,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "4 sets x 15 drops",
-            restTimeSeconds = 25,
-            trainingTips = listOf(
-                "Think of catching a water balloon — soft ankle, zero tension.",
-                "Direct your first touch away from imaginary pressure."
-            ),
-            diagramType = PitchDiagramType.PASSING_TRIANGLE
-        ),
-        FootballExercise(
-            id = "cat_pass_through",
-            name = "Disguised Reverse Through-Ball",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.PASSING.name,
-            categoryLabel = TrainingCategory.PASSING.displayName,
-            description = "Shape your hips for a wide pass, then slice a reverse ball between defender cones.",
-            instructions = listOf(
-                "Set two cones 2 meters apart to represent a center-back/full-back channel.",
-                "Open your hips toward the touchline as if passing wide.",
-                "Wrap your inside foot at the last moment to thread the ball cleanly between the cones."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "4 sets x 12 passes",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Look at the decoy runner first, then slice the pass into the central gap.",
-                "Weight the pass so the striker runs onto it without slowing down."
-            ),
-            diagramType = PitchDiagramType.PASSING_TRIANGLE
-        ),
-
-        // 3. SHOOTING & FINISHING (3)
-        FootballExercise(
-            id = "cat_shoot_laces",
-            name = "Power Instep Box Drive",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SHOOTING.name,
-            categoryLabel = TrainingCategory.SHOOTING.displayName,
-            description = "Generate clean, unstoppable low power drives from 18 yards.",
-            instructions = listOf(
-                "Place the ball near the edge of the penalty arc.",
-                "Take one angled touch forward, plant firmly beside the ball, and drive through with your laces.",
-                "Aim for the lower corners of the goal with both left and right feet."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "4 sets x 8 shots",
-            restTimeSeconds = 35,
-            trainingTips = listOf(
-                "Lock your ankle tight and strike with the top bone of your boot.",
-                "Keep your knee over the ball at impact to prevent skying shots."
-            ),
-            diagramType = PitchDiagramType.FINISHING_ZONES
-        ),
-        FootballExercise(
-            id = "cat_shoot_finesse",
-            name = "Cut-Inside Whipped Finesse",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SHOOTING.name,
-            categoryLabel = TrainingCategory.SHOOTING.displayName,
-            description = "Bend curled strikes around imaginary defenders into the far top corner.",
-            instructions = listOf(
-                "Dribble down the wide corner of the penalty box.",
-                "Cut sharply inside onto your shooting foot with one positive touch.",
-                "Wrap your inside foot around the side of the ball aiming outside the far post to curl in."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "4 sets x 8 curls",
-            restTimeSeconds = 35,
-            trainingTips = listOf(
-                "Follow through across your body to maximize curl spin.",
-                "Aim just outside the post and let the bend bring it inside the frame."
-            ),
-            diagramType = PitchDiagramType.FINISHING_ZONES
-        ),
-        FootballExercise(
-            id = "cat_shoot_volley",
-            name = "Self-Toss Half-Volley Clinical Finish",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SHOOTING.name,
-            categoryLabel = TrainingCategory.SHOOTING.displayName,
-            description = "Time bouncing deliveries cleanly and strike low controlled volleys on target.",
-            instructions = listOf(
-                "Toss the ball diagonally into the penalty box and sprint onto the bounce.",
-                "Keep your chest over the ball and strike right after the first bounce on the half-volley.",
-                "Alternate left and right foot finishes."
-            ),
-            durationMinutes = 20,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "4 sets x 8 volleys",
-            restTimeSeconds = 35,
-            trainingTips = listOf(
-                "Timing beats brute strength — focus on clean sweet-spot contact.",
-                "Watch the ball all the way onto your boot before looking at the net."
-            ),
-            diagramType = PitchDiagramType.FINISHING_ZONES
-        ),
-
-        // 4. DEFENDING & 1V1 (3)
-        FootballExercise(
-            id = "cat_def_jockey",
-            name = "Zig-Zag Shadow Jockey Shuffle",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.DEFENDING.name,
-            categoryLabel = TrainingCategory.DEFENDING.displayName,
-            description = "Build rapid hip-flip footwork while backpedaling against quick wingers.",
-            instructions = listOf(
-                "Set 4 cones in a zig-zag channel spanning 15 meters.",
-                "Backpedal side-on from cone 1 to 2, drop-step flip your hips, and shuffle to cone 3.",
-                "Sprint forward 5 meters at the final cone to simulate winning a loose ball."
-            ),
-            durationMinutes = 15,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "5 sets x 60 sec",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Keep your center of gravity low and heels off the turf.",
-                "Never cross your feet during lateral transitions."
-            ),
-            diagramType = PitchDiagramType.DEFENSE_SHADOW
-        ),
-        FootballExercise(
-            id = "cat_def_recovery",
-            name = "Goal-Side Recovery & Interception",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.DEFENDING.name,
-            categoryLabel = TrainingCategory.DEFENDING.displayName,
-            description = "Sprint diagonally to recover goal-side position before stepping into the lane.",
-            instructions = listOf(
-                "Start wide at the halfway line and sprint diagonally toward the penalty spot.",
-                "Brake smoothly into a low jockey stance without over-running the ball carrier.",
-                "Step forward explosively to intercept or poke-tackle on cue."
-            ),
-            durationMinutes = 16,
-            timerWorkSeconds = 75,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "6 recovery sprints",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Always take the shortest diagonal line back toward your own goal.",
-                "Check behind you for late trailing midfield runs."
-            ),
-            diagramType = PitchDiagramType.DEFENSE_SHADOW
-        ),
-        FootballExercise(
-            id = "cat_def_aerial",
-            name = "Box Clearance & Weak-Foot Exit Pass",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.DEFENDING.name,
-            categoryLabel = TrainingCategory.DEFENDING.displayName,
-            description = "Win defensive clearances under pressure and immediately launch a calm outlet pass.",
-            instructions = listOf(
-                "Toss a high ball toward the 6-yard line, attack it at peak height.",
-                "Land in balance, take one sharp defensive touch away from pressure.",
-                "Play an accurate 15-meter outlet pass into wide channel cones."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "4 sets x 8 clearances",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Clear high and wide away from the central penalty arc.",
-                "Defending only finishes when your team secures the next pass."
-            ),
-            diagramType = PitchDiagramType.DEFENSE_SHADOW
-        ),
-
-        // 5. SPEED & AGILITY (3)
-        FootballExercise(
-            id = "cat_spd_tshuttle",
-            name = "T-Cone Explosive Direction Change",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SPEED_AGILITY.name,
-            categoryLabel = TrainingCategory.SPEED_AGILITY.displayName,
-            description = "Accelerate, brake cleanly, shuffle laterally, and sprint out of sharp turns.",
-            instructions = listOf(
-                "Place 4 cones in a T-shape (10m stem, 5m left and right wings).",
-                "Sprint 10m forward, side-shuffle left 5m, side-shuffle right 10m, back to center, and backpedal home.",
-                "Rest fully between reps so every cut stays explosive."
-            ),
-            durationMinutes = 15,
-            timerWorkSeconds = 45,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "6 all-out T-runs",
-            restTimeSeconds = 40,
-            trainingTips = listOf(
-                "Drop your hips before every plant to absorb braking force safely.",
-                "Drive your arms violently on the forward acceleration."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-        FootballExercise(
-            id = "cat_spd_5105",
-            name = "5-10-5 Pro Match Shuttle",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SPEED_AGILITY.name,
-            categoryLabel = TrainingCategory.SPEED_AGILITY.displayName,
-            description = "Simulate high-speed pressing transitions and 180-degree sprints.",
-            instructions = listOf(
-                "Start straddling the center cone.",
-                "Sprint 5m right and touch the cone, sprint 10m left and touch, sprint 5m back through center.",
-                "Push off your outside foot aggressively on both 180-degree turns."
-            ),
-            durationMinutes = 16,
-            timerWorkSeconds = 45,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "6 shuttles",
-            restTimeSeconds = 45,
-            trainingTips = listOf(
-                "Stay low through each turn — tall posture wastes valuable tenths of a second.",
-                "Alternate starting left and right every rep."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-        FootballExercise(
-            id = "cat_spd_ballburst",
-            name = "15m Sprint + Ball Carry Deceleration",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SPEED_AGILITY.name,
-            categoryLabel = TrainingCategory.SPEED_AGILITY.displayName,
-            description = "Transition seamlessly from top sprint speed straight into composed ball control.",
-            instructions = listOf(
-                "Sprint 15m without the ball to meet a stationary ball at a cone.",
-                "Decelerate in 2 quick steps, cushion a controlled outside-foot touch around the cone.",
-                "Finish with a composed low pass into a target gate."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "6 sprint-to-control reps",
-            restTimeSeconds = 40,
-            trainingTips = listOf(
-                "Shorten your final 3 steps before the ball so your touch stays soft.",
-                "Match-winning wingers master braking as well as accelerating."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-
-        // 6. STAMINA & ENDURANCE (3)
-        FootballExercise(
-            id = "cat_end_shuttle",
-            name = "Box-to-Box 20/20 Interval Shuttle",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.ENDURANCE.name,
-            categoryLabel = TrainingCategory.ENDURANCE.displayName,
-            description = "Build 90-minute match stamina with repeated high-intensity runs and active jogging.",
-            instructions = listOf(
-                "Mark a 40-meter pitch channel between two cones.",
-                "Run hard at 85% effort for 20 seconds, then jog lightly for 20 seconds.",
-                "Repeat continuously for 8 cycles without stopping."
-            ),
-            durationMinutes = 20,
-            timerWorkSeconds = 120,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "3 blocks x 8 intervals",
-            restTimeSeconds = 60,
-            trainingTips = listOf(
-                "Focus on smooth nasal-to-mouth breathing during the 20-second recovery jog.",
-                "Keep consistent lap speed from rep 1 through rep 8."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-        FootballExercise(
-            id = "cat_end_dribble",
-            name = "Continuous 3-Minute Ball-Control Loop",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.ENDURANCE.name,
-            categoryLabel = TrainingCategory.ENDURANCE.displayName,
-            description = "Train technical precision while tired using non-stop dribbling and turns.",
-            instructions = listOf(
-                "Set a 20m x 15m rectangle with cones.",
-                "Dribble continuously around the loop mixing inside cuts, sole rolls, and pace surges.",
-                "Maintain tight control even as heart rate climbs in minute 3."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 180,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "3 sets x 3 min",
-            restTimeSeconds = 45,
-            trainingTips = listOf(
-                "Fatigue tests your technique — keep touches short and frequent.",
-                "Scan upward every 4 seconds like in late-game situations."
-            ),
-            diagramType = PitchDiagramType.SLALOM_DRIBBLING
-        ),
-        FootballExercise(
-            id = "cat_end_yoyo",
-            name = "Match-Tempo Shuttle + Finish Under Fatigue",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.ENDURANCE.name,
-            categoryLabel = TrainingCategory.ENDURANCE.displayName,
-            description = "Execute sharp passes and shots immediately after high-heart-rate shuttle runs.",
-            instructions = listOf(
-                "Complete 4 x 20-meter shuttles at high tempo.",
-                "Collect a ball at the top of the box and immediately strike on target.",
-                "Walk back calmly for 40 seconds before starting the next round."
-            ),
-            durationMinutes = 22,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "5 fatigue-finish rounds",
-            restTimeSeconds = 45,
-            trainingTips = listOf(
-                "Exhale right before striking to steady your core and balance.",
-                "Late goals in the 85th minute come from calm technique under fatigue."
-            ),
-            diagramType = PitchDiagramType.FINISHING_ZONES
-        ),
-
-        // 7. SET PIECES & CROSSING (3)
-        FootballExercise(
-            id = "cat_set_freekick",
-            name = "Curled Free Kick Over the Wall",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SET_PIECES.name,
-            categoryLabel = TrainingCategory.SET_PIECES.displayName,
-            description = "Master whip, dip, and target placement from 20–24 yards.",
-            instructions = listOf(
-                "Place cones 9.15m ahead as an imaginary 3-player defensive wall.",
-                "Stand 4 steps back and 2 steps wide of the ball.",
-                "Strike across the lower inside quadrant with rapid follow-through for dip and spin."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "4 sets x 6 free kicks",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Lean slightly away from the ball as you swing to create natural upward lift.",
-                "Follow through upward and across rather than leaning backward."
-            ),
-            diagramType = PitchDiagramType.PENALTY_SET_PIECE
-        ),
-        FootballExercise(
-            id = "cat_set_penalty",
-            name = "High-Composure Penalty Routine",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SET_PIECES.name,
-            categoryLabel = TrainingCategory.SET_PIECES.displayName,
-            description = "Build a repeatable breathing, run-up, and corner-placement penalty habit.",
-            instructions = listOf(
-                "Place the ball on the 11m penalty spot and step back smoothly.",
-                "Take one deep calming breath, lock eyes on your chosen corner, and walk up cleanly.",
-                "Strike firmly inside the side netting using either inside-foot precision or laces drive."
-            ),
-            durationMinutes = 15,
-            timerWorkSeconds = 75,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "3 sets x 6 penalties",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Never change your corner choice mid-run-up.",
-                "Firm side-foot strikes into the side netting beat soft center shots."
-            ),
-            diagramType = PitchDiagramType.PENALTY_SET_PIECE
-        ),
-        FootballExercise(
-            id = "cat_set_corner",
-            name = "Inswinging & Outswinging Corner Delivery",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.SET_PIECES.name,
-            categoryLabel = TrainingCategory.SET_PIECES.displayName,
-            description = "Drop consistent corners onto the 6-yard edge and penalty spot target zones.",
-            instructions = listOf(
-                "Place 2 target cones inside the box: one at the near post, one at the penalty spot.",
-                "Deliver whipped corners aiming to clear the first defender cleanly.",
-                "Track how many out of 10 land inside the danger corridor."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "3 sets x 10 corners",
-            restTimeSeconds = 35,
-            trainingTips = listOf(
-                "Drive across the lower side of the ball for pace — avoid slow, floaty balls.",
-                "Check the wind before deciding how wide to aim."
-            ),
-            diagramType = PitchDiagramType.PENALTY_SET_PIECE
-        ),
-
-        // 8. REACTION & SCANNING (3)
-        FootballExercise(
-            id = "cat_react_scan",
-            name = "Shoulder-Scan Color Cue Turn",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.REACTION_VISION.name,
-            categoryLabel = TrainingCategory.REACTION_VISION.displayName,
-            description = "Train automatic pre-touch scanning and instant directional turns.",
-            instructions = listOf(
-                "Place two different colored cones 4 meters behind you.",
-                "Pass against a wall, scan behind before the rebound arrives, and choose a color mentally.",
-                "Take touch #1 smoothly into the chosen color gate without stopping."
-            ),
-            durationMinutes = 15,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "4 sets x 14 scans",
-            restTimeSeconds = 25,
-            trainingTips = listOf(
-                "Keep your head level on the swivel so you maintain depth perception.",
-                "Scan while the ball is in transit — never while it's touching your foot."
-            ),
-            diagramType = PitchDiagramType.PASSING_TRIANGLE
-        ),
-        FootballExercise(
-            id = "cat_react_bounce",
-            name = "Quick-Reflex Wall Volley Reactions",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.REACTION_VISION.name,
-            categoryLabel = TrainingCategory.REACTION_VISION.displayName,
-            description = "Sharpen ankle reflexes and split-step readiness against unpredictable rebounds.",
-            instructions = listOf(
-                "Stand 2.5 meters from a rebound surface.",
-                "Strike firm half-volleys alternating feet as fast as possible.",
-                "Adjust immediately to awkward bounces with chest, thigh, or outside-foot saves."
-            ),
-            durationMinutes = 15,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "5 sets x 45 sec",
-            restTimeSeconds = 25,
-            trainingTips = listOf(
-                "Keep knees bent and arms ready for rapid balance shifts.",
-                "Quick little adjustment steps beat big lunges."
-            ),
-            diagramType = PitchDiagramType.GOALKEEPER_ANGLES
-        ),
-        FootballExercise(
-            id = "cat_react_sprint",
-            name = "Whistle-Cue Transition Burst",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.REACTION_VISION.name,
-            categoryLabel = TrainingCategory.REACTION_VISION.displayName,
-            description = "React from slow ball mastery to a 10m counter-attack sprint on audio cue.",
-            instructions = listOf(
-                "Perform slow toe-taps in a central 2m square.",
-                "When the timer cue sounds or every 10 seconds, push the ball 4m ahead and sprint 10m.",
-                "Cut sharply at the end cone and jog back smoothly."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "6 transition bursts",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "React with your hips first — lean forward into the sprint immediately.",
-                "Big first touch into open space lets you hit top speed faster."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-
-        // 9. MATCH TACTICS (3)
-        FootballExercise(
-            id = "cat_tact_433",
-            name = "4-3-3 Half-Space Pocket Movement",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.MATCH_TACTICS.name,
-            categoryLabel = TrainingCategory.MATCH_TACTICS.displayName,
-            description = "Find dangerous pockets between center-backs and full-backs to receive forward passes.",
-            instructions = listOf(
-                "Mark a wide wing zone and an inside half-space channel with cones.",
-                "Start wide to stretch the defender, then dart diagonally inside into the half-space pocket.",
-                "Receive on the half-turn and play forward toward goal."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "4 sets x 8 pocket runs",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Wait until your teammate has their head up before making the inside dart.",
-                "Occupy spaces between two defenders so neither knows who should mark you."
-            ),
-            diagramType = PitchDiagramType.FORMATION_433
-        ),
-        FootballExercise(
-            id = "cat_tact_width",
-            name = "3rd-Man Support & Give-and-Go",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.MATCH_TACTICS.name,
-            categoryLabel = TrainingCategory.MATCH_TACTICS.displayName,
-            description = "Unlock compact defenses using rapid wall-pass combinations and forward support runs.",
-            instructions = listOf(
-                "Play a firm pass into a target wall or cone triangle.",
-                "Sprint forward past the line immediately as the ball leaves your foot.",
-                "Finish the return pass cleanly into a corner mini-goal zone."
-            ),
-            durationMinutes = 18,
-            timerWorkSeconds = 75,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "4 sets x 10 combos",
-            restTimeSeconds = 30,
-            trainingTips = listOf(
-                "Pass and MOVE — never admire your own pass.",
-                "Angle your run away from the defender's field of vision."
-            ),
-            diagramType = PitchDiagramType.PASSING_TRIANGLE
-        ),
-        FootballExercise(
-            id = "cat_tact_transition",
-            name = "5-Second Counter-Press Transition",
-            section = LessonSection.CATEGORY,
-            categoryKey = TrainingCategory.MATCH_TACTICS.name,
-            categoryLabel = TrainingCategory.MATCH_TACTICS.displayName,
-            description = "Simulate instant defensive pressure immediately after losing possession in attack.",
-            instructions = listOf(
-                "Execute a controlled strike or pass inside the attacking third.",
-                "Immediately trigger a 5-second high-intensity press sprint toward two side cones.",
-                "Drop smoothly into compact midfield shape if the 5-second press is bypassed."
-            ),
-            durationMinutes = 20,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.ADVANCED,
-            recommendedReps = "6 transition cycles",
-            restTimeSeconds = 35,
-            trainingTips = listOf(
-                "The first 5 seconds after losing the ball are the easiest time to win it back.",
-                "Curve your press run to block the opponent's central outlet."
-            ),
-            diagramType = PitchDiagramType.FORMATION_433
-        )
-    )
-
-    val fitnessExercises: List<FootballExercise> = listOf(
-        FootballExercise(
-            id = "fit_warmup",
-            name = "FIFA-Style Dynamic Pitch Warm-Up",
-            section = LessonSection.FITNESS,
-            categoryKey = FitnessArea.WARMUP.name,
-            categoryLabel = FitnessArea.WARMUP.displayName,
-            description = "Activate hips, hamstrings, ankles, and nervous system before touching the ball.",
-            instructions = listOf(
-                "Light forward and backward jog for 90 seconds.",
-                "Perform 10 open-the-gate and 10 close-the-gate hip circles.",
-                "Complete 2 progressive 15m build-up runs at 60% and 75% speed."
+                "Stand balanced with knees slightly bent behind a stationary ball.",
+                "Tap the top of the ball lightly with the ball of your right foot, then switch rapidly to your left.",
+                "Stay on the balls of your feet and glance upward every 5 touches."
             ),
             durationMinutes = 8,
-            timerWorkSeconds = 90,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "1 complete warm-up flow",
-            restTimeSeconds = 15,
-            trainingTips = listOf("Warm muscles produce faster sprints and prevent hamstring pulls."),
-            safetyInstructions = listOf(
-                "Never start explosive sprinting or hard shooting cold.",
-                "Increase range of motion gradually on every repetition."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-        FootballExercise(
-            id = "fit_stretch",
-            name = "Groin, Hip Flexor & Hamstring Mobility",
-            section = LessonSection.FITNESS,
-            categoryKey = FitnessArea.STRETCHING.name,
-            categoryLabel = FitnessArea.STRETCHING.displayName,
-            description = "Protect kicking muscles and improve stride length for long passes and strikes.",
-            instructions = listOf(
-                "Perform World's Greatest Stretch lunges with thoracic rotation (5 each side).",
-                "Complete dynamic leg swings front-to-back and side-to-side (12 per leg).",
-                "Finish with 30-second gentle seated butterfly adductor holds."
-            ),
-            durationMinutes = 8,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "2 controlled rounds",
-            restTimeSeconds = 15,
-            trainingTips = listOf("Exhale slowly as you sink gently into each hip opener."),
-            safetyInstructions = listOf(
-                "Stretch to mild tension only — never bounce aggressively or force painful joints."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-        FootballExercise(
-            id = "fit_sprints",
-            name = "10m & 20m Flying Sprint Bursts",
-            section = LessonSection.FITNESS,
-            categoryKey = FitnessArea.SPRINTS.name,
-            categoryLabel = FitnessArea.SPRINTS.displayName,
-            description = "Develop explosive first-step separation to beat full-backs and chase through-balls.",
-            instructions = listOf(
-                "Start in a low 2-point sprinter stance behind the baseline cone.",
-                "Drive hard for 10 meters staying low for the first 4 steps.",
-                "Walk back slowly for full recovery between reps."
-            ),
-            durationMinutes = 14,
-            timerWorkSeconds = 30,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "6 explosive sprints",
-            restTimeSeconds = 45,
-            trainingTips = listOf("Drive your elbows backward and knees high through the first 5 strides."),
-            safetyInstructions = listOf(
-                "Allow full 45-second rest between sprints so technique never breaks down.",
-                "Stop immediately if you feel sharp hamstring tightness."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-        FootballExercise(
-            id = "fit_ladder",
-            name = "Quick-Feet Cone & Ladder Footwork",
-            section = LessonSection.FITNESS,
-            categoryKey = FitnessArea.LADDER_AGILITY.name,
-            categoryLabel = FitnessArea.LADDER_AGILITY.displayName,
-            description = "Sharpen ground contact speed and balance for rapid 1v1 changes of direction.",
-            instructions = listOf(
-                "Place 6 flat cones or ladder rungs 45cm apart.",
-                "Run 2-feet-in-each-box forward, then lateral Icky Shuffle steps.",
-                "Stay light on the balls of your feet with quick arm pumping."
-            ),
-            durationMinutes = 12,
             timerWorkSeconds = 45,
             difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "5 sets x 45 sec",
-            restTimeSeconds = 25,
-            trainingTips = listOf("Light, quiet steps mean faster neural reaction time."),
-            safetyInstructions = listOf(
-                "Keep eyes forward once you learn the pattern so you don't trip on markers."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
+            recommendedReps = "4 sets x 45 sec",
+            restTimeSeconds = 20,
+            tips = listOf("Keep touches quiet and soft so the ball stays completely still."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
         ),
-        FootballExercise(
-            id = "fit_squats",
-            name = "Explosive Jump Squats & Single-Leg Balance",
-            section = LessonSection.FITNESS,
-            categoryKey = FitnessArea.SQUATS.name,
-            categoryLabel = FitnessArea.SQUATS.displayName,
-            description = "Build quad and glute power for stronger shots, shielding, and aerial duels.",
+        drill(
+            id = "bm_foundations",
+            name = "Foundations",
+            category = TrainingCategory.BALL_MASTERY,
+            description = "Pendulum inside-foot touches back and forth between both feet for clean ball control.",
             instructions = listOf(
-                "Perform 12 controlled bodyweight squats with chest proud and weight through mid-foot.",
-                "Add 6 soft-landing tuck/jump squats focusing on silent landings.",
-                "Finish with 20-second single-leg balance holds per leg."
+                "Position the ball centered between both feet shoulder-width apart.",
+                "Tap the ball gently side-to-side using only the inside arches of left and right feet.",
+                "Gradually increase speed while keeping your hips low."
             ),
-            durationMinutes = 12,
-            timerWorkSeconds = 60,
-            difficulty = SkillLevel.INTERMEDIATE,
-            recommendedReps = "3 sets x 12 squats",
-            restTimeSeconds = 35,
-            trainingTips = listOf("Keep knees aligned over your middle toes — never let them cave inward."),
-            safetyInstructions = listOf(
-                "Land softly with bent knees to protect ankles and knee ligaments."
-            ),
-            diagramType = PitchDiagramType.AGILITY_LADDER
-        ),
-        FootballExercise(
-            id = "fit_lunges",
-            name = "Multi-Directional Football Lunges",
-            section = LessonSection.FITNESS,
-            categoryKey = FitnessArea.LUNGES.name,
-            categoryLabel = FitnessArea.LUNGES.displayName,
-            description = "Strengthen deceleration muscles for sharp cuts, shooting plants, and tackles.",
-            instructions = listOf(
-                "Step forward into a 90/90 lunge and drive sharply back to standing.",
-                "Step sideways into a lateral groin lunge to protect cutting muscles.",
-                "Complete 10 reps per leg with steady upright posture."
-            ),
-            durationMinutes = 12,
-            timerWorkSeconds = 60,
+            durationMinutes = 8,
+            timerWorkSeconds = 45,
             difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "3 sets x 10 per leg",
-            restTimeSeconds = 30,
-            trainingTips = listOf("Control the lowering phase for 2 seconds before driving back up."),
-            safetyInstructions = listOf(
-                "Keep your front knee behind or directly above your toes without twisting."
-            ),
-            diagramType = PitchDiagramType.DEFENSE_SHADOW
+            recommendedReps = "4 sets x 45 sec",
+            restTimeSeconds = 20,
+            tips = listOf("Point toes slightly upward and keep knees soft like springs."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
         ),
-        FootballExercise(
-            id = "fit_planks",
-            name = "Anti-Rotation Core & Plank Circuit",
-            section = LessonSection.FITNESS,
-            categoryKey = FitnessArea.CORE_PLANKS.name,
-            categoryLabel = FitnessArea.CORE_PLANKS.displayName,
-            description = "Stabilize your torso for shoulder-to-shoulder duels and clean shooting balance.",
+        drill(
+            id = "bm_sole_rolls",
+            name = "Sole Rolls",
+            category = TrainingCategory.BALL_MASTERY,
+            description = "Lateral and forward sole drags to manipulate the ball cleanly under tight pressure.",
             instructions = listOf(
-                "Hold a straight-line forearm plank with glutes and abs braced for 30 seconds.",
-                "Transition to side planks for 20 seconds per side.",
-                "Finish with 12 slow dead-bug core extensions."
+                "Place the sole of your right foot on top of the ball and roll it cleanly across your body.",
+                "Stop it softly with the inside or sole of your left foot, then roll back the other way.",
+                "Add a gentle hop on your standing foot for fluid rhythm."
             ),
             durationMinutes = 10,
             timerWorkSeconds = 60,
             difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "3 core circuits",
-            restTimeSeconds = 25,
-            trainingTips = listOf("Breathe steadily while keeping ribs tucked and hips level."),
-            safetyInstructions = listOf(
-                "Stop and reset if your lower back begins to sag toward the ground."
-            ),
-            diagramType = PitchDiagramType.PITCH_DIMENSIONS
+            recommendedReps = "4 sets x 60 sec",
+            restTimeSeconds = 20,
+            tips = listOf("Use the front half of your sole, never your heel."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
         ),
-        FootballExercise(
-            id = "fit_cooldown",
-            name = "Post-Pitch Recovery & Cool-Down",
-            section = LessonSection.FITNESS,
-            categoryKey = FitnessArea.COOLDOWN.name,
-            categoryLabel = FitnessArea.COOLDOWN.displayName,
-            description = "Lower heart rate gradually and flush calf, quad, and hamstring tension after play.",
+        drill(
+            id = "bm_inside_outside",
+            name = "Inside-Outside Touches",
+            category = TrainingCategory.BALL_MASTERY,
+            description = "Quick alternating inside and outside foot shifts with each foot to unbalance markers.",
             instructions = listOf(
-                "Walk slowly around the pitch perimeter for 2 minutes while breathing deeply.",
-                "Hold standing quad, calf, and seated hamstring stretches for 30 seconds per side.",
-                "Hydrate thoroughly and review today's logged session notes."
+                "Touch the ball sideways with the outside of your right foot, then immediately tap back with the inside.",
+                "Perform 30 seconds right foot only, then 30 seconds left foot only.",
+                "Keep your upper body loose to sell lateral feints."
             ),
-            durationMinutes = 8,
+            durationMinutes = 10,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 60 sec",
+            restTimeSeconds = 25,
+            tips = listOf("Move your hips with the ball rather than reaching with stiff legs."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "bm_v_turns",
+            name = "V-Turns",
+            category = TrainingCategory.BALL_MASTERY,
+            description = "Pull the ball back with the sole and push diagonally forward in a sharp V shape.",
+            instructions = listOf(
+                "Pull the ball backward using your right sole as your left foot pivots 45 degrees.",
+                "Push the ball diagonally forward with the inside or instep of your right foot.",
+                "Alternate legs continuously in a 2m x 2m box."
+            ),
+            durationMinutes = 10,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 16 V-turns",
+            restTimeSeconds = 25,
+            tips = listOf("Snap your standing ankle as you pivot so the exit angle stays sharp."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "bm_pull_push",
+            name = "Pull-Push",
+            category = TrainingCategory.BALL_MASTERY,
+            description = "Sole pull-back followed immediately by an instep or laces forward push.",
+            instructions = listOf(
+                "Pull the ball toward yourself with the sole of your dominant foot.",
+                "Before it stops, tap it forward cleanly with your laces or inside foot.",
+                "Repeat alternating feet while shuffling lightly on your toes."
+            ),
+            durationMinutes = 10,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.BEGINNER,
+            recommendedReps = "4 sets x 50 sec",
+            restTimeSeconds = 20,
+            tips = listOf("Keep the ball moving smoothly — avoid stomping down hard."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "bm_ball_control",
+            name = "Ball Control",
+            category = TrainingCategory.BALL_MASTERY,
+            description = "Toss-and-cushion aerial traps using instep, thigh, and chest into open space.",
+            instructions = listOf(
+                "Toss the ball 4 meters high above yourself.",
+                "Cushion the drop smoothly with your instep, withdrawing your foot downward on contact.",
+                "Control within 1 meter, turn 90 degrees, and accelerate 3 steps."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 75,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 12 controls",
+            restTimeSeconds = 25,
+            tips = listOf("Relax your ankle on impact like catching an egg."),
+            diagramType = PitchDiagramType.PASSING_TRIANGLE
+        ),
+        drill(
+            id = "bm_close_mastery",
+            name = "Close Ball Mastery",
+            category = TrainingCategory.BALL_MASTERY,
+            description = "High-tempo 1m x 1m box freestyle combining toe taps, rolls, L-turns, and step-overs.",
+            instructions = listOf(
+                "Mark a tight 1m x 1m square with 4 cones.",
+                "Chain sole rolls, foundations, and behind-leg L-turns nonstop without touching a cone.",
+                "Keep your head up scanning every 3 touches."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.ADVANCED,
+            recommendedReps = "5 sets x 60 sec",
+            restTimeSeconds = 25,
+            tips = listOf("Small touches keep defenders guessing and protect possession in crowds."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+
+        // B. Dribbling (7)
+        drill(
+            id = "drib_cone",
+            name = "Cone Dribbling",
+            category = TrainingCategory.DRIBBLING,
+            description = "Weave tightly through 8 inline cones using inside and outside touches.",
+            instructions = listOf(
+                "Place 8 cones 1.2 meters apart in a straight line.",
+                "Weave cleanly with right foot only, left foot only, then alternating both feet.",
+                "Sprint 5 meters past the last cone on exit."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.BEGINNER,
+            recommendedReps = "6 slalom runs",
+            restTimeSeconds = 25,
+            tips = listOf("One soft touch per stride keeps the ball glued near your feet."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "drib_speed",
+            name = "Speed Dribbling",
+            category = TrainingCategory.DRIBBLING,
+            description = "Push the ball cleanly into stride using laces/pinky-toe at near top sprint speed.",
+            instructions = listOf(
+                "Set two cones 25 meters apart.",
+                "Take controlled forward touches with your laces every 2–3 running strides.",
+                "Decelerate smoothly in 2 steps around the end cone and drive back."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 45,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "6 x 25m carries",
+            restTimeSeconds = 35,
+            tips = listOf("Look ahead at space so you push the ball into your natural running lane."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "drib_1v1",
+            name = "1v1 Dribbling",
+            category = TrainingCategory.DRIBBLING,
+            description = "Attack a central marker cone with a sharp feint and explosive directional exit.",
+            instructions = listOf(
+                "Dribble straight toward a defender cone 10 meters ahead.",
+                "Drop your shoulder left 1.5m before the cone, then burst right with your outside foot.",
+                "Alternate attacking left and right lanes."
+            ),
+            durationMinutes = 14,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 8 beats",
+            restTimeSeconds = 30,
+            tips = listOf("Sell the fake with hips and shoulders, then accelerate hard past the defender."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "drib_cod",
+            name = "Change of Direction",
+            category = TrainingCategory.DRIBBLING,
+            description = "Execute sharp 180-degree Cruyff turns, inside cuts, and sole drag-backs at pace.",
+            instructions = listOf(
+                "Dribble 10 meters fast toward a turn gate.",
+                "Execute a sharp inside-foot hook or Cruyff turn behind your standing heel.",
+                "Accelerate back in the opposite direction immediately."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.BEGINNER,
+            recommendedReps = "4 sets x 8 turns",
+            restTimeSeconds = 25,
+            tips = listOf("Bend your knees low into every cut so your exit stride is instant."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "drib_zigzag",
+            name = "Zigzag Dribbling",
+            category = TrainingCategory.DRIBBLING,
+            description = "Diagonal sprint carries and sharp outside-foot cuts between staggered cones.",
+            instructions = listOf(
+                "Place 6 cones in a wide zigzag pattern 4 meters apart diagonally.",
+                "Drive fast at each cone, cut sharply around the outside edge, and sprint to the next.",
+                "Use left foot cuts on left cones and right foot cuts on right cones."
+            ),
+            durationMinutes = 14,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "6 zigzag runs",
+            restTimeSeconds = 30,
+            tips = listOf("Plant wide outside the cone and push off aggressively into the new angle."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "drib_tight",
+            name = "Tight-Space Dribbling",
+            category = TrainingCategory.DRIBBLING,
+            description = "Keep possession inside a crowded 4m x 4m box using sole rolls and quick shields.",
+            instructions = listOf(
+                "Set 4 cones in a 4m x 4m square with 2 obstacle cones inside.",
+                "Dribble fast inside the grid using rapid sole turns and inside-outside taps.",
+                "Change speed every 4 seconds without letting the ball leave the square."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.ADVANCED,
+            recommendedReps = "4 sets x 60 sec",
+            restTimeSeconds = 25,
+            tips = listOf("Use your arms softly for balance and always keep your body between pressure and ball."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+        drill(
+            id = "drib_skill_moves",
+            name = "Skill Moves",
+            category = TrainingCategory.DRIBBLING,
+            description = "Practice Step-Overs, La Croqueta, Elastico, and Body Feints cleanly at match speed.",
+            instructions = listOf(
+                "Approach a cone defender at 70% tempo.",
+                "Perform a double step-over or La Croqueta lateral glide right before reaching the cone.",
+                "Push cleanly into space and finish with a crisp pass."
+            ),
+            durationMinutes = 14,
+            timerWorkSeconds = 75,
+            difficulty = SkillLevel.ADVANCED,
+            recommendedReps = "4 sets x 10 skill combos",
+            restTimeSeconds = 30,
+            tips = listOf("Timing matters more than flashiness — execute 1.5 meters from the defender."),
+            diagramType = PitchDiagramType.SLALOM_DRIBBLING
+        ),
+
+        // C. Passing (7)
+        drill(
+            id = "pass_short",
+            name = "Short Passing",
+            category = TrainingCategory.PASSING,
+            description = "Accurate 5–10m inside-foot ground passes with locked ankle and clean follow-through.",
+            instructions = listOf(
+                "Set a 1-meter target gate 6 meters ahead or use a wall mark.",
+                "Plant your non-kicking foot beside the ball aimed straight at the target.",
+                "Strike through the ball's equator with your arch."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.BEGINNER,
+            recommendedReps = "4 sets x 20 passes",
+            restTimeSeconds = 20,
+            tips = listOf("Lock your ankle at 90 degrees so the ball glides flat across the turf."),
+            diagramType = PitchDiagramType.PASSING_TRIANGLE
+        ),
+        drill(
+            id = "pass_wall",
+            name = "Wall Passing",
+            category = TrainingCategory.PASSING,
+            description = "High-tempo rebound wall rhythm building weak-foot confidence and ankle firmness.",
+            instructions = listOf(
+                "Stand 4 meters from a solid rebound wall.",
+                "Strike firm ground passes alternating right and left feet.",
+                "Take a quick check over your shoulder between every pass."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.BEGINNER,
+            recommendedReps = "5 sets x 60 sec",
+            restTimeSeconds = 25,
+            tips = listOf("Stay on your toes and meet the ball early rather than waiting flat-footed."),
+            diagramType = PitchDiagramType.PASSING_TRIANGLE
+        ),
+        drill(
+            id = "pass_one_touch",
+            name = "One-Touch Passing",
+            category = TrainingCategory.PASSING,
+            description = "Instant first-time returns off a wall or partner to sharpen reaction and rhythm.",
+            instructions = listOf(
+                "Stand 3.5 meters from a rebound wall.",
+                "Play nonstop one-touch passes without trapping, alternating feet every strike.",
+                "Count consecutive clean rebounds up to 30+."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 60,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "5 sets x 45 sec",
+            restTimeSeconds = 25,
+            tips = listOf("Set your standing foot before the rebound arrives so your strike stays crisp."),
+            diagramType = PitchDiagramType.PASSING_TRIANGLE
+        ),
+        drill(
+            id = "pass_two_touch",
+            name = "Two-Touch Passing",
+            category = TrainingCategory.PASSING,
+            description = "Receive across your body with touch #1 and immediately drive pass #2 into space.",
+            instructions = listOf(
+                "Receive a return pass on your back foot, pushing the ball cleanly across a 1m cone gate.",
+                "Step into touch #2 and fire a crisp ground pass back off the wall.",
+                "Alternate exiting left and right."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 75,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 16 reps",
+            restTimeSeconds = 25,
+            tips = listOf("Never trap dead under your feet — push touch #1 forward into your passing stride."),
+            diagramType = PitchDiagramType.PASSING_TRIANGLE
+        ),
+        drill(
+            id = "pass_long",
+            name = "Long Passing",
+            category = TrainingCategory.PASSING,
+            description = "Driven 25–35m diagonal switches and lofted backspin passes to wide channels.",
+            instructions = listOf(
+                "Place a 3m x 3m target zone 25–30 meters away.",
+                "Approach at a 35-degree angle and strike low under the ball's center with your instep.",
+                "Follow through across your body for clean backspin and control."
+            ),
+            durationMinutes = 15,
+            timerWorkSeconds = 90,
+            difficulty = SkillLevel.ADVANCED,
+            recommendedReps = "4 sets x 10 switches",
+            restTimeSeconds = 30,
+            tips = listOf("Lean slightly back and sweep across the ball rather than poking straight up."),
+            diagramType = PitchDiagramType.PASSING_TRIANGLE
+        ),
+        drill(
+            id = "pass_accuracy",
+            name = "Passing Accuracy",
+            category = TrainingCategory.PASSING,
+            description = "Thread firm passes cleanly through narrow 0.8m cone gates from 8–15 meters.",
+            instructions = listOf(
+                "Set up three 0.8-meter cone gates at 8m, 12m, and 15m.",
+                "Pick your gate, check shoulders, and thread a firm ground pass cleanly through.",
+                "Track clean gate hits out of 15 attempts."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 75,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 15 passes",
+            restTimeSeconds = 25,
+            tips = listOf("Pick a spot on the grass inside the gate to lock your aim before swinging."),
+            diagramType = PitchDiagramType.PASSING_TRIANGLE
+        ),
+        drill(
+            id = "pass_first_touch",
+            name = "First-Touch Passing",
+            category = TrainingCategory.PASSING,
+            description = "Scan behind, cushion passes out of pressure, and immediately release into open lanes.",
+            instructions = listOf(
+                "Pass against a wall, scan over your shoulder while the ball travels.",
+                "Take an angled first touch past a defender cone and thread a quick pass into a side gate.",
+                "Alternate left and right scanning turns."
+            ),
+            durationMinutes = 14,
+            timerWorkSeconds = 75,
+            difficulty = SkillLevel.ADVANCED,
+            recommendedReps = "4 sets x 12 combos",
+            restTimeSeconds = 25,
+            tips = listOf("Open hips early so you can see both the ball and your forward target."),
+            diagramType = PitchDiagramType.PASSING_TRIANGLE
+        ),
+
+        // D. Shooting (8)
+        drill(
+            id = "shoot_power",
+            name = "Power Shooting",
+            category = TrainingCategory.SHOOTING,
+            description = "Drive clean low power strikes with your laces from 18–22 yards.",
+            instructions = listOf(
+                "Take a positive prep touch angled 30 degrees ahead.",
+                "Plant beside the ball, point kicking toes down, and drive cleanly through center with laces.",
+                "Land forward on your kicking foot to maximize power transfer."
+            ),
+            durationMinutes = 15,
             timerWorkSeconds = 90,
             difficulty = SkillLevel.BEGINNER,
-            recommendedReps = "1 full cool-down",
-            restTimeSeconds = 10,
-            trainingTips = listOf("A consistent cool-down reduces next-day muscle soreness dramatically."),
-            safetyInstructions = listOf(
-                "Hold static stretches gently without bouncing while muscles are still warm."
+            recommendedReps = "4 sets x 8 shots",
+            restTimeSeconds = 35,
+            tips = listOf("Keep chest slightly over the ball so low drives stay under the crossbar."),
+            diagramType = PitchDiagramType.FINISHING_ZONES
+        ),
+        drill(
+            id = "shoot_finesse",
+            name = "Finesse Shooting",
+            category = TrainingCategory.SHOOTING,
+            description = "Wrap curled inside-foot shots around defenders into the far corner.",
+            instructions = listOf(
+                "Dribble toward the corner of the penalty arc and cut inside.",
+                "Strike the outer lower quadrant of the ball with your inside arch.",
+                "Follow through across your body aiming outside the far post to curl in."
             ),
-            diagramType = PitchDiagramType.PITCH_DIMENSIONS
+            durationMinutes = 15,
+            timerWorkSeconds = 90,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 8 curls",
+            restTimeSeconds = 35,
+            tips = listOf("Smooth whip speed creates bend — don't try to smash it flat."),
+            diagramType = PitchDiagramType.FINISHING_ZONES
+        ),
+        drill(
+            id = "shoot_instep",
+            name = "Instep Shooting",
+            category = TrainingCategory.SHOOTING,
+            description = "Pure sweet-spot instep mechanics for flat, dipping strikes with minimal spin.",
+            instructions = listOf(
+                "Set the ball stationary at 18 yards.",
+                "Strike dead-center with the hard top bone of your instep with locked ankle.",
+                "Focus on crisp pop sound and flat trajectory."
+            ),
+            durationMinutes = 14,
+            timerWorkSeconds = 75,
+            difficulty = SkillLevel.BEGINNER,
+            recommendedReps = "4 sets x 8 strikes",
+            restTimeSeconds = 30,
+            tips = listOf("Eyes locked on the center of the ball until follow-through finishes."),
+            diagramType = PitchDiagramType.FINISHING_ZONES
+        ),
+        drill(
+            id = "shoot_first_time",
+            name = "First-Time Shooting",
+            category = TrainingCategory.SHOOTING,
+            description = "Strike rolling wall rebounds or lay-offs cleanly on the first touch inside the box.",
+            instructions = listOf(
+                "Roll or bounce a pass into the edge of the penalty box.",
+                "Adjust feet rapidly, open hips toward target, and strike first-time without trapping.",
+                "Target low corners away from the goalkeeper."
+            ),
+            durationMinutes = 15,
+            timerWorkSeconds = 90,
+            difficulty = SkillLevel.ADVANCED,
+            recommendedReps = "4 sets x 8 first-time hits",
+            restTimeSeconds = 35,
+            tips = listOf("Shorten your backswing so you make clean contact with moving passes."),
+            diagramType = PitchDiagramType.FINISHING_ZONES
+        ),
+        drill(
+            id = "shoot_volleys",
+            name = "Volleys",
+            category = TrainingCategory.SHOOTING,
+            description = "Time airborne drops cleanly on the full volley and half-volley on target.",
+            instructions = listOf(
+                "Toss the ball softly to waist height 14 yards out.",
+                "Rotate hips sideways, keep knee over the ball, and strike cleanly through the middle.",
+                "Mix full volleys and half-volleys off one bounce."
+            ),
+            durationMinutes = 15,
+            timerWorkSeconds = 90,
+            difficulty = SkillLevel.ADVANCED,
+            recommendedReps = "4 sets x 8 volleys",
+            restTimeSeconds = 35,
+            tips = listOf("Smooth timing beats brute force — watch the ball all the way onto your boot."),
+            diagramType = PitchDiagramType.FINISHING_ZONES
+        ),
+        drill(
+            id = "shoot_weak_foot",
+            name = "Weak-Foot Shooting",
+            category = TrainingCategory.SHOOTING,
+            description = "Build two-footed box finishing confidence from tight and central angles.",
+            instructions = listOf(
+                "Take 100% of strikes in this set with your non-dominant foot.",
+                "Start close at 12 yards focusing on clean inside-foot placement, then move to 16 yards.",
+                "Keep your balance arm out wide for clean hip rotation."
+            ),
+            durationMinutes = 14,
+            timerWorkSeconds = 75,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 8 weak-foot shots",
+            restTimeSeconds = 30,
+            tips = listOf("Plant your dominant leg slightly wider if needed to keep your swing path clean."),
+            diagramType = PitchDiagramType.FINISHING_ZONES
+        ),
+        drill(
+            id = "shoot_penalty",
+            name = "Penalty Training",
+            category = TrainingCategory.SHOOTING,
+            description = "Repeatable breathing, run-up rhythm, and side-netting placement from 11 meters.",
+            instructions = listOf(
+                "Place the ball firmly on the 11m penalty spot.",
+                "Pick top-left, bottom-left, top-right, or bottom-right BEFORE starting your run-up.",
+                "Take one calm breath and strike cleanly inside the side netting."
+            ),
+            durationMinutes = 12,
+            timerWorkSeconds = 75,
+            difficulty = SkillLevel.BEGINNER,
+            recommendedReps = "3 sets x 6 penalties",
+            restTimeSeconds = 25,
+            tips = listOf("Never change your target mid-run-up; commit 100% to your corner."),
+            diagramType = PitchDiagramType.PENALTY_SET_PIECE
+        ),
+        drill(
+            id = "shoot_accuracy",
+            name = "Shooting Accuracy",
+            category = TrainingCategory.SHOOTING,
+            description = "Target corner cone gates inside the goalposts under calm composure.",
+            instructions = listOf(
+                "Place cones 1.5m inside both left and right goalposts.",
+                "Dribble 5m to the penalty arc and place accurate shots inside the corner zones.",
+                "Score 1 point per clean corner hit out of 10."
+            ),
+            durationMinutes = 14,
+            timerWorkSeconds = 90,
+            difficulty = SkillLevel.INTERMEDIATE,
+            recommendedReps = "4 sets x 10 target shots",
+            restTimeSeconds = 30,
+            tips = listOf("Aim for the side netting — keepers rarely reach firm shots hugging the post."),
+            diagramType = PitchDiagramType.FINISHING_ZONES
         )
     )
 }

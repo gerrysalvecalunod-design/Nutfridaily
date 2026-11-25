@@ -21,6 +21,9 @@ class SettingsDataStore(private val context: Context) {
         val IS_DARK_THEME = booleanPreferencesKey("is_dark_theme")
         val SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
         val SOUND_TONE_INDEX = intPreferencesKey("sound_tone_index")
+        val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
+        val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
+        val REMINDER_TIME_TEXT = stringPreferencesKey("reminder_time_text")
         val PREFERRED_DURATION = intPreferencesKey("preferred_duration_minutes")
         val DAILY_MINUTES_GOAL = intPreferencesKey("daily_minutes_goal")
         val WEEKLY_SESSIONS_GOAL = intPreferencesKey("weekly_sessions_goal")
@@ -29,9 +32,12 @@ class SettingsDataStore(private val context: Context) {
 
     val settingsFlow: Flow<AppSettings> = context.footballSettingsStore.data.map { prefs ->
         AppSettings(
-            isDarkTheme = prefs[Keys.IS_DARK_THEME] ?: false,
+            isDarkTheme = prefs[Keys.IS_DARK_THEME] ?: true,
             soundEnabled = prefs[Keys.SOUND_ENABLED] ?: true,
             soundToneIndex = prefs[Keys.SOUND_TONE_INDEX] ?: 0,
+            vibrationEnabled = prefs[Keys.VIBRATION_ENABLED] ?: true,
+            remindersEnabled = prefs[Keys.REMINDERS_ENABLED] ?: false,
+            reminderTimeText = prefs[Keys.REMINDER_TIME_TEXT] ?: "07:00",
             preferredDurationMinutes = prefs[Keys.PREFERRED_DURATION] ?: 30,
             dailyMinutesGoal = prefs[Keys.DAILY_MINUTES_GOAL] ?: 30,
             weeklySessionsGoal = prefs[Keys.WEEKLY_SESSIONS_GOAL] ?: 5,
@@ -49,6 +55,18 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setSoundToneIndex(index: Int) {
         context.footballSettingsStore.edit { it[Keys.SOUND_TONE_INDEX] = index.coerceIn(0, 2) }
+    }
+
+    suspend fun setVibrationEnabled(enabled: Boolean) {
+        context.footballSettingsStore.edit { it[Keys.VIBRATION_ENABLED] = enabled }
+    }
+
+    suspend fun setRemindersEnabled(enabled: Boolean) {
+        context.footballSettingsStore.edit { it[Keys.REMINDERS_ENABLED] = enabled }
+    }
+
+    suspend fun setReminderTimeText(timeText: String) {
+        context.footballSettingsStore.edit { it[Keys.REMINDER_TIME_TEXT] = timeText }
     }
 
     suspend fun setPreferredDuration(minutes: Int) {

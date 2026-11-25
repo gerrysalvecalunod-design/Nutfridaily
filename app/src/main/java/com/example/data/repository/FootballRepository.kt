@@ -6,6 +6,7 @@ import com.example.data.local.SettingsDataStore
 import com.example.data.model.AchievementEntity
 import com.example.data.model.AppSettings
 import com.example.data.model.CompletedSessionEntity
+import com.example.data.model.DailyPlanItemEntity
 import com.example.data.model.FootballExercise
 import com.example.data.model.FootballProgram
 import com.example.data.model.PersonalRecordEntity
@@ -24,6 +25,7 @@ class FootballRepository(
 ) {
     private val profileDao = database.playerProfileDao()
     private val completedDao = database.completedSessionDao()
+    private val dailyPlanDao = database.dailyPlanDao()
     private val programDao = database.programModuleCompletionDao()
     private val plannerDao = database.plannedWorkoutDao()
     private val recordDao = database.personalRecordDao()
@@ -33,6 +35,7 @@ class FootballRepository(
 
     val playerProfile: Flow<PlayerProfileEntity?> = profileDao.observeProfile()
     val completedSessions: Flow<List<CompletedSessionEntity>> = completedDao.observeAll()
+    val dailyPlanItems: Flow<List<DailyPlanItemEntity>> = dailyPlanDao.observeAll()
     val programCompletions: Flow<List<ProgramModuleCompletionEntity>> = programDao.observeAll()
     val plannedWorkouts: Flow<List<PlannedWorkoutEntity>> = plannerDao.observeAll()
     val personalRecords: Flow<List<PersonalRecordEntity>> = recordDao.observeAll()
@@ -44,11 +47,13 @@ class FootballRepository(
     val programs: List<FootballProgram> = ProgramsAndTacticsCurriculum.programs
     val programExercises: List<FootballExercise> = ProgramsAndTacticsCurriculum.programExercises
     val rulesLessons: List<FootballExercise> = ProgramsAndTacticsCurriculum.rulesLessons
-    val categoryExercises: List<FootballExercise> = SkillAndFitnessCurriculum.categoryExercises
-    val fitnessExercises: List<FootballExercise> = SkillAndFitnessCurriculum.fitnessExercises
+    val categoryExercises: List<FootballExercise> =
+        SkillAndFitnessCurriculum.attackAndBallExercises +
+            ConditioningAndDefenseCurriculum.speedDefenseAndGkExercises
+    val fitnessExercises: List<FootballExercise> = ConditioningAndDefenseCurriculum.fitnessExercises
 
     val allExercises: List<FootballExercise> =
-        programExercises + categoryExercises + fitnessExercises + rulesLessons
+        categoryExercises + programExercises + fitnessExercises + rulesLessons
 
     fun findExerciseById(id: String): FootballExercise? = allExercises.find { it.id == id }
 
@@ -61,6 +66,17 @@ class FootballRepository(
     suspend fun deleteCompletedSession(id: Long) = completedDao.deleteById(id)
 
     suspend fun deleteCompletedByExerciseId(exerciseId: String) = completedDao.deleteByExerciseId(exerciseId)
+
+    suspend fun getDailyPlanOnce(): List<DailyPlanItemEntity> = dailyPlanDao.getAllOnce()
+
+    suspend fun replaceDailyPlan(items: List<DailyPlanItemEntity>) {
+        withContext(Dispatchers.IO) {
+            dailyPlanDao.clearAll()
+            dailyPlanDao.insertAll(items)
+        }
+    }
+
+    suspend fun updateDailyPlanItem(item: DailyPlanItemEntity) = dailyPlanDao.update(item)
 
     suspend fun upsertProgramModuleCompletion(entry: ProgramModuleCompletionEntity) = programDao.upsert(entry)
 
@@ -99,6 +115,12 @@ class FootballRepository(
     suspend fun setSoundEnabled(enabled: Boolean) = settingsStore.setSoundEnabled(enabled)
 
     suspend fun setSoundToneIndex(index: Int) = settingsStore.setSoundToneIndex(index)
+
+    suspend fun setVibrationEnabled(enabled: Boolean) = settingsStore.setVibrationEnabled(enabled)
+
+    suspend fun setRemindersEnabled(enabled: Boolean) = settingsStore.setRemindersEnabled(enabled)
+
+    suspend fun setReminderTimeText(timeText: String) = settingsStore.setReminderTimeText(timeText)
 
     suspend fun setPreferredDuration(minutes: Int) = settingsStore.setPreferredDuration(minutes)
 

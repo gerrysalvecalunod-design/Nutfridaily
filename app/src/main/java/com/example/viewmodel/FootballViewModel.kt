@@ -10,6 +10,7 @@ import com.example.data.local.SettingsDataStore
 import com.example.data.model.AchievementEntity
 import com.example.data.model.AppSettings
 import com.example.data.model.CompletedSessionEntity
+import com.example.data.model.DailyPlanItemEntity
 import com.example.data.model.FootballExercise
 import com.example.data.model.FootballProgram
 import com.example.data.model.LessonSection
@@ -22,6 +23,7 @@ import com.example.data.model.SavedTrainingCheckpointEntity
 import com.example.data.model.SkillLevel
 import com.example.data.model.TrainingCategory
 import com.example.data.model.TrainingGoalEntity
+import com.example.data.repository.DailyPlanGenerator
 import com.example.data.repository.FootballRepository
 import com.example.data.util.SoundAndReminderHelper
 import com.example.ui.screens.AppScreen
@@ -55,6 +57,7 @@ data class CategoryMasteryStat(
 
 data class DashboardSummary(
     val totalSessions: Int = 0,
+    val totalCompletedDrills: Int = 0,
     val totalMinutes: Int = 0,
     val totalHoursFormatted: String = "0.0",
     val streakDays: Int = 0,
@@ -72,15 +75,14 @@ data class DashboardSummary(
     val monthlyPoints: List<DailyChartPoint> = emptyList(),
     val categoryMastery: List<CategoryMasteryStat> = emptyList(),
     val unlockedAchievementsCount: Int = 0,
-    val totalAchievementsCount: Int = 8
+    val totalAchievementsCount: Int = 9
 )
 
 enum class TrainingSubTab(val label: String) {
+    CATEGORIES("8 Categories (61)"),
     PROGRAMS("Programs"),
-    CATEGORIES("Skills (9)"),
-    FITNESS("Fitness"),
-    RULES("Tactics & Rules"),
-    TIMER("Timer")
+    FITNESS("Warmup & Recovery"),
+    RULES("Tactics & Rules")
 }
 
 enum class TimerPhase {
@@ -97,12 +99,13 @@ data class TrainingTimerUiState(
     val remainingSeconds: Int = 60,
     val isRunning: Boolean = false,
     val hasStarted: Boolean = false,
-    val customTitle: String = "Quick Pitch Timer",
+    val customTitle: String = "Football Training Timer",
     val completedInSessionCount: Int = 0,
     val lastNotificationText: String? = null
 ) {
     val currentExercise: FootballExercise? get() = queue.getOrNull(currentIndex)
     val hasNextExercise: Boolean get() = currentIndex + 1 < queue.size
+    val hasPreviousExercise: Boolean get() = currentIndex > 0
 }
 
 class FootballViewModel(application: Application) : AndroidViewModel(application) {
@@ -114,7 +117,7 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
     private val _currentScreen = MutableStateFlow<AppScreen>(AppScreen.Splash)
     val currentScreen: StateFlow<AppScreen> = _currentScreen.asStateFlow()
 
-    private val _trainingSubTab = MutableStateFlow(TrainingSubTab.PROGRAMS)
+    private val _trainingSubTab = MutableStateFlow(TrainingSubTab.CATEGORIES)
     val trainingSubTab: StateFlow<TrainingSubTab> = _trainingSubTab.asStateFlow()
 
     private val _selectedExercise = MutableStateFlow<FootballExercise?>(null)
@@ -139,6 +142,9 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
 
     val completedSessions: StateFlow<List<CompletedSessionEntity>> = repository.completedSessions
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val dailyPlanItems: StateFlow<List<DailyPlanItemEntity>> = repository.dailyPlanItems
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val programCompletions: StateFlow<List<ProgramModuleCompletionEntity>> = repository.programCompletions
@@ -200,6 +206,8 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
             val storedSettings = repository.settingsFlow.first()
             _selectedProgramId.value = storedSettings.activeProgramId
 
+            ensureTodayDailyPlanGenerated()
+
             // Restore any saved in-progress training checkpoint across app/device restart
             val checkpoint = repository.getCheckpointOnce()
             if (checkpoint != null && checkpoint.isActive && checkpoint.queueIdsSerialized.isNotBlank()) {
@@ -226,12 +234,10 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        // Automatically evaluate & save achievements in SQLite whenever sessions or modules change
+        // Automatically evaluate & save all 9 achievements in SQLite whenever sessions change
         viewModelScope.launch {
-            combine(completedSessions, programCompletions) { sessions, progDone ->
-                sessions to progDone
-            }.collect { (sessions, progDone) ->
-                evaluateAndPersistAchievements(sessions, progDone)
+            completedSessions.collect { sessions ->
+                evaluateAndPersistAchievements(sessions)
             }
         }
     }
@@ -247,11 +253,10 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         ): DashboardSummary {
             val today = DateUtils.todayKey()
             val totalMinutes = sessions.sumOf { it.durationMinutes }
+            val totalDrills = sessions.sumOf { it.completedDrillsCount.coerceAtLeast(1) }
             val hoursFormatted = String.format(Locale.US, "%.1f", totalMinutes / 60f)
-
             val todayMinutes = sessions.filter { it.dateKey == today }.sumOf { it.durationMinutes }
 
-            // Streak calculation
             val activeDates = sessions.map { it.dateKey }.toSet()
             var streak = 0
             var offset = if (activeDates.contains(today)) 0 else 1
@@ -260,7 +265,6 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                 offset++
             }
 
-            // Weekly chart (last 7 days)
             val weekKeys = DateUtils.lastNDaysKeys(7)
             val weekSet = weekKeys.toSet()
             val weeklyPts = weekKeys.map { k ->
@@ -279,7 +283,6 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
             val dailyGoal = currentSettings.dailyMinutesGoal.coerceAtLeast(1)
             val dailyPct = ((todayMinutes.toFloat() / dailyGoal) * 100f).toInt().coerceIn(0, 100)
 
-            // Monthly 28-day heatmap
             val monthKeys = DateUtils.lastNDaysKeys(28)
             val monthlyPts = monthKeys.mapIndexed { idx, k ->
                 val dayItems = sessions.filter { it.dateKey == k }
@@ -291,13 +294,11 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                 )
             }
 
-            // Active Program progress
             val activeProg = programs.find { it.id == currentSettings.activeProgramId } ?: programs.first()
             val doneInProg = progDone.count { it.programId == activeProg.id && it.isCompleted }
             val totalInProg = activeProg.moduleIds.size.coerceAtLeast(1)
             val progPct = ((doneInProg.toFloat() / totalInProg) * 100f).toInt().coerceIn(0, 100)
 
-            // Category mastery
             val mastery = TrainingCategory.entries.map { cat ->
                 val totalInCat = categoryExercises.count { it.categoryKey == cat.name }.coerceAtLeast(1)
                 val catLogs = sessions.filter { it.categoryKey == cat.name }
@@ -307,10 +308,11 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
             }
 
             val unlockedCount = achievements.count { it.unlocked }
-            val totalAchCount = achievements.size.coerceAtLeast(8)
+            val totalAchCount = achievements.size.coerceAtLeast(9)
 
             return DashboardSummary(
                 totalSessions = sessions.size,
+                totalCompletedDrills = totalDrills,
                 totalMinutes = totalMinutes,
                 totalHoursFormatted = hoursFormatted,
                 streakDays = streak,
@@ -333,21 +335,24 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private suspend fun evaluateAndPersistAchievements(
-        sessions: List<CompletedSessionEntity>,
-        progDone: List<ProgramModuleCompletionEntity>
-    ) {
+    private suspend fun evaluateAndPersistAchievements(sessions: List<CompletedSessionEntity>) {
         val current = repository.getAchievementsOnce().ifEmpty { DatabaseInitializer.defaultAchievements() }
         val today = DateUtils.todayKey()
         val totalSessions = sessions.size
+        val totalDrills = sessions.sumOf { it.completedDrillsCount.coerceAtLeast(1) }
         val totalMinutes = sessions.sumOf { it.durationMinutes }
-        val dribbleDone = sessions.count {
-            it.categoryKey == TrainingCategory.DRIBBLING.name ||
-                it.categoryKey == TrainingCategory.SPEED_AGILITY.name
+
+        val ballMasterCount = sessions.count {
+            it.categoryKey == TrainingCategory.BALL_MASTERY.name ||
+                it.categoryKey == TrainingCategory.DRIBBLING.name ||
+                it.categoryKey == TrainingCategory.PASSING.name
         }
-        val finisherDone = sessions.count {
-            it.categoryKey == TrainingCategory.SHOOTING.name ||
-                it.categoryKey == TrainingCategory.SET_PIECES.name
+        val speedMasterCount = sessions.count {
+            it.categoryKey == TrainingCategory.SPEED_AGILITY.name ||
+                it.categoryKey == TrainingCategory.PHYSICAL_CONDITIONING.name
+        }
+        val shootingMasterCount = sessions.count {
+            it.categoryKey == TrainingCategory.SHOOTING.name
         }
 
         val activeDates = sessions.map { it.dateKey }.toSet()
@@ -358,20 +363,17 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
             offset++
         }
 
-        val maxProgCompleted = programs.maxOfOrNull { p ->
-            progDone.count { it.programId == p.id && it.isCompleted }
-        } ?: 0
-
         val updated = current.map { ach ->
             val progress = when (ach.id) {
-                "ach_first_kickoff" -> totalSessions.coerceAtMost(1)
-                "ach_hour_pitch" -> totalMinutes.coerceAtMost(60)
-                "ach_dribble_3" -> dribbleDone.coerceAtMost(3)
-                "ach_finisher_2" -> finisherDone.coerceAtMost(2)
-                "ach_streak_3" -> streak.coerceAtMost(3)
-                "ach_streak_7" -> streak.coerceAtMost(7)
-                "ach_academy_grad" -> maxProgCompleted.coerceAtMost(6)
+                "ach_first_training" -> totalSessions.coerceAtMost(1)
+                "ach_sessions_5" -> totalSessions.coerceAtMost(5)
                 "ach_sessions_10" -> totalSessions.coerceAtMost(10)
+                "ach_drills_50" -> totalDrills.coerceAtMost(50)
+                "ach_hours_5" -> totalMinutes.coerceAtMost(300)
+                "ach_streak_7" -> streak.coerceAtMost(7)
+                "ach_ball_master" -> ballMasterCount.coerceAtMost(5)
+                "ach_speed_master" -> speedMasterCount.coerceAtMost(5)
+                "ach_shooting_master" -> shootingMasterCount.coerceAtMost(5)
                 else -> ach.progressCurrent
             }
             val nowUnlocked = ach.unlocked || progress >= ach.progressTarget
@@ -383,6 +385,85 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         }
         if (updated != current) {
             repository.upsertAchievements(updated)
+        }
+    }
+
+    // Personalized Daily Plan Generation & Continuation
+    private suspend fun ensureTodayDailyPlanGenerated(forceRegenerate: Boolean = false) {
+        val today = DateUtils.todayKey()
+        val existing = repository.getDailyPlanOnce()
+        val profile = repository.getProfileOnce() ?: PlayerProfileEntity()
+        val needsNew = forceRegenerate || existing.isEmpty() || existing.first().planDateKey != today
+        if (needsNew) {
+            val generated = DailyPlanGenerator.generatePlanItems(
+                profile = profile,
+                allCategoryExercises = categoryExercises,
+                fitnessExercises = fitnessExercises,
+                dateKey = today
+            )
+            repository.replaceDailyPlan(generated)
+        }
+    }
+
+    fun regenerateDailyPlan() {
+        viewModelScope.launch { ensureTodayDailyPlanGenerated(forceRegenerate = true) }
+    }
+
+    fun toggleDailyPlanItemCompleted(item: DailyPlanItemEntity) {
+        viewModelScope.launch {
+            val nextDone = !item.isCompleted
+            repository.updateDailyPlanItem(item.copy(isCompleted = nextDone))
+            val syncId = "daily_${item.planDateKey}_${item.id}"
+            if (nextDone && !item.isRestSlot) {
+                val ex = repository.findExerciseById(item.exerciseId)
+                repository.deleteCompletedByExerciseId(syncId)
+                repository.insertCompletedSession(
+                    CompletedSessionEntity(
+                        exerciseId = syncId,
+                        dateKey = DateUtils.todayKey(),
+                        categoryKey = ex?.categoryKey ?: TrainingCategory.BALL_MASTERY.name,
+                        categoryLabel = ex?.categoryLabel ?: item.categoryLabel,
+                        title = item.title,
+                        durationMinutes = (item.durationSeconds / 60).coerceAtLeast(3),
+                        completedDrillsCount = 1,
+                        drillsSummary = "${item.sectionLabel} • ${ex?.recommendedReps ?: "${item.durationSeconds}s"}",
+                        resultSummary = "Completed in Daily Plan"
+                    )
+                )
+                playCue(isFinish = true)
+            } else if (!nextDone) {
+                repository.deleteCompletedByExerciseId(syncId)
+            }
+        }
+    }
+
+    fun startDailyPlanInTimer(remainingOnly: Boolean = true) {
+        val items = dailyPlanItems.value
+        val drillExercises = items
+            .filter { !it.isRestSlot && (!remainingOnly || !it.isCompleted) }
+            .mapNotNull { repository.findExerciseById(it.exerciseId) }
+            .ifEmpty {
+                items.filter { !it.isRestSlot }.mapNotNull { repository.findExerciseById(it.exerciseId) }
+            }
+            .ifEmpty { listOf(recommendedExerciseForToday()) }
+        launchExercisesInTimer(drillExercises, "Today's Personalized Plan")
+    }
+
+    fun hasUnfinishedSession(): Boolean {
+        val cp = savedCheckpoint.value
+        if (cp != null && cp.isActive) return true
+        val drills = dailyPlanItems.value.filter { !it.isRestSlot }
+        val doneCount = drills.count { it.isCompleted }
+        return doneCount in 1 until drills.size
+    }
+
+    fun continueOrStartTodaysTraining() {
+        val cp = savedCheckpoint.value
+        if (cp != null && cp.isActive) {
+            _selectedExercise.value = null
+            _currentScreen.value = AppScreen.Timer
+        } else {
+            startDailyPlanInTimer(remainingOnly = true)
         }
     }
 
@@ -432,63 +513,37 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
 
     fun openExercise(exercise: FootballExercise) {
         _selectedExercise.value = exercise
+        _currentScreen.value = AppScreen.Training
     }
 
     fun closeExercise() {
         _selectedExercise.value = null
     }
 
-    // Daily Recommendation based on saved player skill level
     fun recommendedExerciseForToday(): FootballExercise {
         val level = SkillLevel.entries.find { it.name == playerProfile.value?.skillLevel } ?: SkillLevel.BEGINNER
-        val pool = allExercises.filter { it.difficulty == level && it.section != LessonSection.RULES }
+        val pool = categoryExercises.filter { it.difficulty == level }
         val daySeed = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
         return if (pool.isNotEmpty()) pool[daySeed % pool.size] else categoryExercises.first()
     }
 
-    // Next incomplete module in active program for Continue Training
-    fun nextProgramModuleToContinue(): Pair<FootballProgram, FootballExercise>? {
-        val activeProg = programs.find { it.id == settings.value.activeProgramId } ?: programs.first()
-        val doneIds = programCompletions.value
-            .filter { it.programId == activeProg.id && it.isCompleted }
-            .map { it.moduleId }
-            .toSet()
-        val nextModuleId = activeProg.moduleIds.firstOrNull { it !in doneIds } ?: return null
-        val exercise = repository.findExerciseById(nextModuleId) ?: return null
-        return activeProg to exercise
-    }
-
-    fun continueTrainingFromCheckpoint() {
-        val cp = savedCheckpoint.value
-        if (cp != null && cp.isActive) {
-            _trainingSubTab.value = TrainingSubTab.TIMER
-            _selectedExercise.value = null
-            _currentScreen.value = AppScreen.Training
-        } else {
-            val nextPair = nextProgramModuleToContinue()
-            if (nextPair != null) {
-                val (prog, ex) = nextPair
-                _selectedProgramId.value = prog.id
-                _trainingSubTab.value = TrainingSubTab.PROGRAMS
-                _selectedExercise.value = ex
-                _currentScreen.value = AppScreen.Training
-            } else {
-                quickStartRecommendedWorkout()
-            }
-        }
-    }
-
-    // Welcome & Automatic Profile Saving (no Save button required!)
+    // Automatic Profile Saving (No Save Button Required)
     fun autoUpdatePlayerName(name: String) {
         viewModelScope.launch {
             profileWriteMutex.withLock {
                 val existing = repository.getProfileOnce() ?: PlayerProfileEntity()
-                repository.upsertProfile(
-                    existing.copy(
-                        playerName = name,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                )
+                repository.upsertProfile(existing.copy(playerName = name, updatedAt = System.currentTimeMillis()))
+                _lastAutoSavedAt.value = System.currentTimeMillis()
+            }
+        }
+    }
+
+    fun autoUpdatePlayerAge(age: Int) {
+        val clamped = age.coerceIn(5, 85)
+        viewModelScope.launch {
+            profileWriteMutex.withLock {
+                val existing = repository.getProfileOnce() ?: PlayerProfileEntity()
+                repository.upsertProfile(existing.copy(age = clamped, updatedAt = System.currentTimeMillis()))
                 _lastAutoSavedAt.value = System.currentTimeMillis()
             }
         }
@@ -503,15 +558,13 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
             }
             profileWriteMutex.withLock {
                 val existing = repository.getProfileOnce() ?: PlayerProfileEntity()
-                repository.upsertProfile(
-                    existing.copy(
-                        skillLevel = skillLevel.name,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                )
+                repository.upsertProfile(existing.copy(skillLevel = skillLevel.name, updatedAt = System.currentTimeMillis()))
             }
             repository.setActiveProgramId(progId)
             _selectedProgramId.value = progId
+            if (dailyPlanItems.value.none { it.isCompleted }) {
+                ensureTodayDailyPlanGenerated(forceRegenerate = true)
+            }
             _lastAutoSavedAt.value = System.currentTimeMillis()
         }
     }
@@ -520,31 +573,27 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             profileWriteMutex.withLock {
                 val existing = repository.getProfileOnce() ?: PlayerProfileEntity()
-                repository.upsertProfile(
-                    existing.copy(
-                        playerPosition = position.name,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                )
-                _lastAutoSavedAt.value = System.currentTimeMillis()
+                repository.upsertProfile(existing.copy(playerPosition = position.name, updatedAt = System.currentTimeMillis()))
             }
+            if (dailyPlanItems.value.none { it.isCompleted }) {
+                ensureTodayDailyPlanGenerated(forceRegenerate = true)
+            }
+            _lastAutoSavedAt.value = System.currentTimeMillis()
         }
     }
 
     fun autoUpdatePreferredDuration(minutes: Int) {
-        val clamped = minutes.coerceIn(10, 120)
+        val clamped = minutes.coerceIn(15, 60)
         viewModelScope.launch {
             profileWriteMutex.withLock {
                 val existing = repository.getProfileOnce() ?: PlayerProfileEntity()
-                repository.upsertProfile(
-                    existing.copy(
-                        preferredDurationMinutes = clamped,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                )
+                repository.upsertProfile(existing.copy(preferredDurationMinutes = clamped, updatedAt = System.currentTimeMillis()))
             }
             repository.setPreferredDuration(clamped)
             repository.setDailyMinutesGoal(clamped)
+            if (dailyPlanItems.value.none { it.isCompleted }) {
+                ensureTodayDailyPlanGenerated(forceRegenerate = true)
+            }
             _lastAutoSavedAt.value = System.currentTimeMillis()
         }
     }
@@ -553,19 +602,15 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             profileWriteMutex.withLock {
                 val existing = repository.getProfileOnce() ?: PlayerProfileEntity()
-                repository.upsertProfile(
-                    existing.copy(
-                        trainingGoals = goals,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                )
-                _lastAutoSavedAt.value = System.currentTimeMillis()
+                repository.upsertProfile(existing.copy(trainingGoals = goals, updatedAt = System.currentTimeMillis()))
             }
+            _lastAutoSavedAt.value = System.currentTimeMillis()
         }
     }
 
     fun completeOnboarding(
         name: String,
+        age: Int,
         skillLevel: SkillLevel,
         position: PlayerPosition,
         preferredDurationMinutes: Int,
@@ -577,31 +622,34 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                 SkillLevel.INTERMEDIATE -> "prog_intermediate"
                 SkillLevel.ADVANCED -> "prog_advanced"
             }
+            val safeDuration = preferredDurationMinutes.coerceIn(15, 60)
             profileWriteMutex.withLock {
                 val existing = repository.getProfileOnce() ?: PlayerProfileEntity()
                 val resolvedName = name.trim().ifBlank { existing.playerName.trim() }.ifBlank { "Player" }
                 repository.upsertProfile(
                     existing.copy(
                         playerName = resolvedName,
+                        age = age.coerceIn(5, 85),
                         skillLevel = skillLevel.name,
                         playerPosition = position.name,
-                        preferredDurationMinutes = preferredDurationMinutes.coerceIn(10, 120),
+                        preferredDurationMinutes = safeDuration,
                         trainingGoals = goalText.trim().ifBlank { existing.trainingGoals },
                         onboardingCompleted = true,
                         updatedAt = System.currentTimeMillis()
                     )
                 )
             }
-            repository.setPreferredDuration(preferredDurationMinutes)
-            repository.setDailyMinutesGoal(preferredDurationMinutes)
+            repository.setPreferredDuration(safeDuration)
+            repository.setDailyMinutesGoal(safeDuration)
             repository.setActiveProgramId(progId)
             _selectedProgramId.value = progId
+            ensureTodayDailyPlanGenerated(forceRegenerate = true)
             _lastAutoSavedAt.value = System.currentTimeMillis()
             _currentScreen.value = AppScreen.Home
         }
     }
 
-    // Exercise & Program Logging (automatically records date, duration, drills, and results)
+    // Exercise & Session Logging
     fun logExerciseCompleted(
         exercise: FootballExercise,
         resultSummary: String = "Completed • ${exercise.recommendedReps}"
@@ -615,10 +663,16 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                     categoryLabel = exercise.categoryLabel,
                     title = exercise.name,
                     durationMinutes = exercise.durationMinutes,
+                    completedDrillsCount = 1,
                     drillsSummary = exercise.recommendedReps,
                     resultSummary = resultSummary
                 )
             )
+            // Also check off matching item in today's daily plan if present
+            val planMatch = dailyPlanItems.value.find { !it.isCompleted && it.exerciseId == exercise.id }
+            if (planMatch != null) {
+                repository.updateDailyPlanItem(planMatch.copy(isCompleted = true))
+            }
             playCue(isFinish = true)
         }
     }
@@ -656,6 +710,7 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                         categoryLabel = prog?.title ?: "Training Program",
                         title = ex?.name ?: "Program Module",
                         durationMinutes = ex?.durationMinutes ?: 15,
+                        completedDrillsCount = 1,
                         drillsSummary = ex?.recommendedReps ?: "Program Module",
                         resultSummary = "Module Completed (${prog?.level?.displayName ?: "Program"})"
                     )
@@ -671,7 +726,7 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.resetProgram(programId) }
     }
 
-    // Interactive Training Timer Queue, Checkpointing & Controls
+    // Interactive Training Timer Queue, Checkpointing, Previous/Next, Sound & Vibration
     private fun persistTimerCheckpoint(state: TrainingTimerUiState, active: Boolean) {
         viewModelScope.launch {
             if (!active || state.queue.isEmpty() || state.phase == TimerPhase.FINISHED) {
@@ -714,8 +769,7 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         _timerState.value = newState
         persistTimerCheckpoint(newState, active = true)
         _selectedExercise.value = null
-        _trainingSubTab.value = TrainingSubTab.TIMER
-        _currentScreen.value = AppScreen.Training
+        _currentScreen.value = AppScreen.Timer
     }
 
     fun quickStartRecommendedWorkout() {
@@ -735,7 +789,7 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         val updated = active.copy(
             isRunning = true,
             hasStarted = true,
-            lastNotificationText = if (active.phase == TimerPhase.WORK) "Training active — keep your tempo sharp!" else "Rest recovery active..."
+            lastNotificationText = if (active.phase == TimerPhase.WORK) "Training active — stay sharp!" else "Rest recovery active..."
         )
         _timerState.value = updated
         persistTimerCheckpoint(updated, active = true)
@@ -797,6 +851,25 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
         )
         _timerState.value = updated
         persistTimerCheckpoint(updated, active = true)
+    }
+
+    fun previousExerciseInTimer() {
+        timerJob?.cancel()
+        val s = _timerState.value
+        val prevIdx = (s.currentIndex - 1).coerceAtLeast(0)
+        val prevEx = s.queue.getOrNull(prevIdx) ?: return
+        val updated = s.copy(
+            currentIndex = prevIdx,
+            phase = TimerPhase.WORK,
+            totalPhaseSeconds = prevEx.timerWorkSeconds,
+            remainingSeconds = prevEx.timerWorkSeconds,
+            isRunning = false,
+            hasStarted = true,
+            lastNotificationText = "Moved back to: ${prevEx.name}"
+        )
+        _timerState.value = updated
+        persistTimerCheckpoint(updated, active = true)
+        playCue(isFinish = false)
     }
 
     fun nextExerciseInTimer() {
@@ -888,7 +961,7 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                                 remainingSeconds = 0,
                                 isRunning = false,
                                 completedInSessionCount = cur.completedInSessionCount + 1,
-                                lastNotificationText = "Workout finished & saved to Progress!"
+                                lastNotificationText = "Workout finished & saved to History!"
                             )
                             _timerState.value = finished
                             persistTimerCheckpoint(finished, active = false)
@@ -935,9 +1008,15 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                 toneIndex = settings.value.soundToneIndex
             )
         }
+        if (settings.value.vibrationEnabled) {
+            SoundAndReminderHelper.triggerVibration(
+                context = getApplication(),
+                isFinishOrRestEnd = isFinish
+            )
+        }
     }
 
-    // Daily Workout Planner
+    // Weekly Planner CRUD
     fun addPlannedWorkout(
         dayOfWeek: String,
         title: String,
@@ -984,6 +1063,7 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                         categoryLabel = workout.categoryLabel,
                         title = workout.title,
                         durationMinutes = workout.durationMinutes,
+                        completedDrillsCount = workout.exerciseIdsSerialized.split(",").count { it.isNotBlank() }.coerceAtLeast(1),
                         drillsSummary = drillsText,
                         resultSummary = "${workout.dayOfWeek} Planned Workout Completed"
                     )
@@ -1041,7 +1121,7 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
             repository.insertGoal(
                 TrainingGoalEntity(
                     title = title.trim(),
-                    category = category.trim().ifBlank { "Dribbling" },
+                    category = category.trim().ifBlank { "Ball Mastery" },
                     targetValue = targetValue.coerceIn(1, 9999),
                     currentValue = 0,
                     unit = unit.trim().ifBlank { "reps" },
@@ -1081,6 +1161,23 @@ class FootballViewModel(application: Application) : AndroidViewModel(application
                 SoundAndReminderHelper.playCueBeep(isFinishOrRestEnd = true, toneIndex = index)
             }
         }
+    }
+
+    fun setVibrationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setVibrationEnabled(enabled)
+            if (enabled) {
+                SoundAndReminderHelper.triggerVibration(getApplication(), isFinishOrRestEnd = false)
+            }
+        }
+    }
+
+    fun setRemindersEnabled(enabled: Boolean) {
+        viewModelScope.launch { repository.setRemindersEnabled(enabled) }
+    }
+
+    fun setReminderTimeText(timeText: String) {
+        viewModelScope.launch { repository.setReminderTimeText(timeText) }
     }
 
     fun setWeeklySessionsGoal(sessions: Int) {

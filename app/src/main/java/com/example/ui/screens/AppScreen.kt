@@ -5,7 +5,11 @@ sealed class AppScreen(val route: String) {
     data object Welcome : AppScreen("welcome")
     data object Home : AppScreen("home")
     data object Training : AppScreen("training")
-    data object Planner : AppScreen("planner")
+    data object DailyPlan : AppScreen("daily_plan")
+    data object Timer : AppScreen("timer")
+    data object History : AppScreen("history")
     data object Progress : AppScreen("progress")
+    data object Achievements : AppScreen("achievements")
     data object Profile : AppScreen("profile")
+    data object Settings : AppScreen("settings")
 }
